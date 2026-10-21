@@ -17,7 +17,13 @@ import {
 import type { Color } from "scripting"
 import type { Work } from "../lib/api"
 import { usePalette } from "../lib/theme"
+import type { CardVariant } from "./ShareCard"
 import { ShareCard } from "./ShareCard"
+
+const VARIANTS: { key: CardVariant; label: string }[] = [
+  { key: "poster", label: "海报" },
+  { key: "classic", label: "经典" },
+]
 
 export function ShareCardSheet({ work }: { work: Work }) {
   const T = usePalette()
@@ -25,6 +31,7 @@ export function ShareCardSheet({ work }: { work: Work }) {
   const [cover, setCover] = useState<UIImage | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const [variant, setVariant] = useState<CardVariant>("poster")
 
   useEffect(() => {
     let alive = true
@@ -37,7 +44,7 @@ export function ShareCardSheet({ work }: { work: Work }) {
   }, [work.cover])
 
   const cardW = Math.min(370, Device.screen.width - 44)
-  const card = () => <ShareCard work={work} cover={cover ?? undefined} />
+  const card = () => <ShareCard work={work} cover={cover ?? undefined} width={cardW} variant={variant} />
 
   async function save() {
     if (busy) return
@@ -98,7 +105,30 @@ export function ShareCardSheet({ work }: { work: Work }) {
             padding={{ horizontal: 16, top: 10, bottom: 20 }}
             frame={{ maxWidth: Infinity }}
           >
-            <ShareCard work={work} cover={cover ?? undefined} width={cardW} />
+            <HStack spacing={8} padding={{ top: 4 }} frame={{ maxWidth: Infinity }}>
+              {VARIANTS.map((v) => (
+                <ZStack
+                  key={v.key}
+                  padding={{ horizontal: 14, vertical: 7 }}
+                  frame={{ height: 32 }}
+                  background={variant === v.key ? T.accent : T.rowBg}
+                  clipShape="capsule"
+                  contentShape="capsule"
+                  onTapGesture={() => setVariant(v.key)}
+                >
+                  <Text
+                    font="footnote"
+                    fontWeight="semibold"
+                    foregroundStyle={variant === v.key ? T.onAccent : T.subText}
+                  >
+                    {v.label}
+                  </Text>
+                </ZStack>
+              ))}
+              <Spacer />
+            </HStack>
+
+            <ShareCard work={work} cover={cover ?? undefined} width={cardW} variant={variant} />
             {msg != null ? (
               <Text font="footnote" foregroundStyle={T.subText}>
                 {msg}

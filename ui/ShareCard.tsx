@@ -9,6 +9,12 @@ const RED = "#A81C4B"
 const INK = "#12100F"
 const MUTED = "rgba(18,16,15,0.52)"
 
+const ACCENT = "#FF5C8D"
+const DARK = "#151114"
+const DARK_SOFT = "#211B1F"
+
+export type CardVariant = "classic" | "poster"
+
 /** 波形柱：确定性伪随机，同一个作品每次画出来一样。 */
 function bars(seed: number, count: number): number[] {
   const out: number[] = []
@@ -21,18 +27,18 @@ function bars(seed: number, count: number): number[] {
   return out
 }
 
-function Waveform({ seed }: { seed: number }) {
-  const hs = bars(seed, 30)
+function Waveform({ seed, color, count = 30 }: { seed: number; color: string; count?: number }) {
+  const hs = bars(seed, count)
   return (
     <HStack spacing={2} alignment="center">
       {hs.map((h, i) => {
         const k = i / (hs.length - 1)
-        const alpha = 1 - k * 0.86
+        const alpha = 1 - k * 0.7
         return (
           <Rectangle
             key={i}
-            fill={`rgba(168,28,75,${alpha.toFixed(2)})` as any}
-            frame={{ width: 3, height: h }}
+            fill={`rgba(${color},${alpha.toFixed(2)})` as any}
+            frame={{ width: 2.5, height: Math.round(h * 0.82) }}
             clipShape="capsule"
           />
         )
@@ -41,22 +47,32 @@ function Waveform({ seed }: { seed: number }) {
   )
 }
 
-export function ShareCard({
+function coverSource(work: Work, cover?: UIImage): any {
+  return cover != null ? { image: cover } : { imageUrl: work.cover }
+}
+
+function rjCode(work: Work): string {
+  return `RJ${String(work.id).padStart(8, "0")}`
+}
+
+function credit(work: Work): string {
+  return work.vas.length > 0 ? `${work.circle}｜${work.vas.join("、")}` : work.circle
+}
+
+/** 旧版：白底、居中、红色编号胶囊。 */
+function ShareCardClassic({
   work,
   cover,
-  width = DEFAULT_W,
-  signature = "ASMR One",
+  width,
+  signature,
 }: {
   work: Work
   cover?: UIImage
-  width?: number
-  signature?: string
+  width: number
+  signature: string
 }) {
   const INNER = width - PAD * 2
   const COVER_H = Math.round((INNER * 3) / 4)
-  const code = `RJ${String(work.id).padStart(8, "0")}`
-  const sub = work.vas.length > 0 ? `${work.circle} | ${work.vas.join("、")}` : work.circle
-  const src: any = cover != null ? { image: cover } : { imageUrl: work.cover }
 
   return (
     <VStack
@@ -68,7 +84,7 @@ export function ShareCard({
       frame={{ width }}
     >
       <Image
-        {...src}
+        {...coverSource(work, cover)}
         resizable
         aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
         frame={{ width: INNER, height: COVER_H }}
@@ -87,7 +103,7 @@ export function ShareCard({
         >
           <Image systemName="waveform" font="caption" fontWeight="bold" foregroundStyle="#FFFFFF" />
           <Text font="caption" fontWeight="bold" foregroundStyle="#FFFFFF">
-            {code}
+            {rjCode(work)}
           </Text>
         </HStack>
 
@@ -109,7 +125,7 @@ export function ShareCard({
           lineLimit={1}
           frame={{ maxWidth: Infinity }}
         >
-          {sub}
+          {credit(work)}
         </Text>
 
         <Text font="footnote" fontWeight="semibold" foregroundStyle={RED} multilineTextAlignment="center">
@@ -119,7 +135,7 @@ export function ShareCard({
         <Rectangle fill="rgba(18,16,15,0.10)" frame={{ maxWidth: Infinity, height: 0.5 }} />
 
         <HStack spacing={10} frame={{ maxWidth: Infinity }}>
-          <Waveform seed={work.id} />
+          <Waveform seed={work.id} color="168,28,75" />
           <Spacer />
           <HStack spacing={7}>
             <ZStack
@@ -143,4 +159,113 @@ export function ShareCard({
       </VStack>
     </VStack>
   )
+}
+
+/** 新版：深底编辑感，封面正方满幅，信息左对齐，编号退到角上。 */
+function ShareCardPoster({
+  work,
+  cover,
+  width,
+  signature,
+}: {
+  work: Work
+  cover?: UIImage
+  width: number
+  signature: string
+}) {
+  const PAD2 = 14
+  const INNER = width - PAD2 * 2
+
+  return (
+    <VStack
+      spacing={0}
+      padding={PAD2}
+      background={DARK}
+      clipShape={shape(26)}
+      shadow={{ color: "rgba(21,17,20,0.34)", radius: 28, y: 12 }}
+      frame={{ width }}
+    >
+      <HStack spacing={0} frame={{ maxWidth: Infinity }}>
+        <Text font="caption2" fontWeight="bold" foregroundStyle="rgba(255,255,255,0.40)">
+          A S M R . O N E
+        </Text>
+        <Spacer />
+        <Text font="caption2" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.30)">
+          {rjCode(work)}
+        </Text>
+      </HStack>
+
+      <Image
+        {...coverSource(work, cover)}
+        resizable
+        aspectRatio={{ value: 1, contentMode: "fill" }}
+        frame={{ width: INNER, height: INNER }}
+        clipShape={shape(18)}
+        padding={{ top: 12 }}
+        placeholder={
+          <Rectangle fill={DARK_SOFT} frame={{ width: INNER, height: INNER }} clipShape={shape(18)} />
+        }
+      />
+
+      <VStack spacing={9} padding={{ top: 16 }} frame={{ maxWidth: Infinity }}>
+        <Text
+          font="headline"
+          fontWeight="bold"
+          foregroundStyle="#FFFFFF"
+          multilineTextAlignment="leading"
+          lineLimit={2}
+          frame={{ maxWidth: Infinity, alignment: "leading" }}
+        >
+          {work.title}
+        </Text>
+        <Text
+          font="subheadline"
+          foregroundStyle="rgba(255,255,255,0.55)"
+          multilineTextAlignment="leading"
+          lineLimit={1}
+          frame={{ maxWidth: Infinity, alignment: "leading" }}
+        >
+          {credit(work)}
+        </Text>
+      </VStack>
+
+      <HStack spacing={0} padding={{ top: 16 }} frame={{ maxWidth: Infinity }}>
+        <Rectangle fill="rgba(255,255,255,0.12)" frame={{ maxWidth: Infinity, height: 0.5 }} />
+      </HStack>
+
+      <HStack spacing={10} padding={{ top: 12 }} frame={{ maxWidth: Infinity }}>
+        <Waveform seed={work.id} color="255,92,141" count={24} />
+        <Spacer />
+        <HStack spacing={6}>
+          <ZStack frame={{ width: 22, height: 22 }} background={ACCENT} clipShape="circle">
+            <Text font="caption2" fontWeight="bold" foregroundStyle="#2A0E17">
+              A
+            </Text>
+          </ZStack>
+          <Text font="caption" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.74)" lineLimit={1}>
+            {signature}
+          </Text>
+        </HStack>
+      </HStack>
+    </VStack>
+  )
+}
+
+export function ShareCard({
+  work,
+  cover,
+  width = DEFAULT_W,
+  signature = "ASMR One",
+  variant = "poster",
+}: {
+  work: Work
+  cover?: UIImage
+  width?: number
+  signature?: string
+  variant?: CardVariant
+}) {
+  if (variant === "classic") {
+    return <ShareCardClassic work={work} cover={cover} width={width} signature={signature} />
+  }
+  return <ShareCardPoster work={work} cover={cover} width={width} signature={signature} />
 }
