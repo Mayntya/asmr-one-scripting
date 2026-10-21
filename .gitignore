@@ -1,0 +1,6 @@
+# 调试用的预览夹具，不随仓库发布
+_preview_*
+
+.DS_Store
+node_modules/
+*.log

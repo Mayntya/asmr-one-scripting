@@ -1,0 +1,13 @@
+{
+  "name": "ASMR One",
+  "icon": "headphones",
+  "color": "rgba(255, 92, 141, 1)",
+  "version": "1.0.0",
+  "runInApp": true,
+  "localizedNames": {
+    "zh": "ASMR One"
+  },
+  "localizedDescriptions": {
+    "zh": "用 Scripting 写的 asmr.one 客户端：浏览作品、串流播放、记录口味"
+  }
+}
