@@ -1,7 +1,8 @@
-import { HStack, ProgressView, Rectangle, ScrollView, Spacer, Text, VStack, ZStack, useEffect, useState } from "scripting"
+import { HStack, Image, ProgressView, Rectangle, ScrollView, Spacer, Text, VStack, ZStack, useEffect, useState } from "scripting"
 import type { SortKey, Work } from "../lib/api"
 import { searchWorks } from "../lib/api"
 import { circleTone, cvTone, tagTone, toneColors } from "../lib/palette"
+import { library } from "../lib/store"
 import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
 import { EmptyState, PageHeader } from "./parts"
 import { WorkCard } from "./WorkCard"
@@ -18,6 +19,29 @@ const ORDERS: { key: SortKey; label: string }[] = [
 let tagSeq = 0
 
 export type TagKind = "tag" | "cv" | "circle"
+
+/** 页面右上角的心形收藏按钮。标签 / CV / 社团共用。 */
+function LikeButton({ kind, value }: { kind: TagKind; value: string }) {
+  const T = usePalette()
+  const [on, setOn] = useState(library.isLiked(kind, value))
+  return (
+    <ZStack
+      frame={{ width: 38, height: 38 }}
+      background={on ? T.accentSoft : T.glassBg}
+      border={{ style: on ? T.accent : T.border, width: 0.6 }}
+      clipShape="circle"
+      contentShape="circle"
+      onTapGesture={() => setOn(library.toggleLike(kind, value))}
+    >
+      <Image
+        systemName={on ? "heart.fill" : "heart"}
+        font="subheadline"
+        fontWeight="semibold"
+        foregroundStyle={on ? T.accent : T.text}
+      />
+    </ZStack>
+  )
+}
 
 export function TagPage({ kind, value }: { kind: TagKind; value: string }) {
   const T = usePalette()
@@ -58,7 +82,11 @@ export function TagPage({ kind, value }: { kind: TagKind; value: string }) {
       <Rectangle fill={T.bg} ignoresSafeArea />
       <ScrollView navigationBarVisibility="hidden">
       <VStack spacing={10} padding={{ horizontal: 16, top: 8, bottom: 150 }} frame={{ maxWidth: Infinity }}>
-        <PageHeader title={value} back />
+        <PageHeader
+          title={value}
+          back
+          trailing={kind === "circle" ? undefined : <LikeButton kind={kind} value={value} />}
+        />
 
         <HStack spacing={8}>
           <Text

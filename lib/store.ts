@@ -25,8 +25,18 @@ export interface ListenRecord {
   lastAt: number
 }
 
+export type LikeKind = "tag" | "cv" | "circle"
+
+/** 收藏的标签 / CV / 社团。作品收藏单独在 favorites 里。 */
+export interface LikedItem {
+  kind: LikeKind
+  value: string
+  at: number
+}
+
 interface LibraryData {
   favorites: Work[]
+  liked: LikedItem[]
   history: HistoryItem[]
   tracks: ListenRecord[]
   hours: number[]
@@ -38,6 +48,7 @@ interface LibraryData {
 function emptyData(): LibraryData {
   return {
     favorites: [],
+    liked: [],
     history: [],
     tracks: [],
     hours: new Array(24).fill(0),
@@ -66,6 +77,14 @@ class Library {
       const base = emptyData()
       this.data = {
         favorites: Array.isArray(parsed.favorites) ? parsed.favorites : base.favorites,
+        liked: Array.isArray(parsed.liked)
+          ? parsed.liked.filter(
+              (it: any) =>
+                it != null &&
+                typeof it.value === "string" &&
+                (it.kind === "tag" || it.kind === "cv" || it.kind === "circle")
+            )
+          : base.liked,
         history: Array.isArray(parsed.history) ? parsed.history : base.history,
         tracks: Array.isArray(parsed.tracks) ? parsed.tracks : base.tracks,
         hours:
@@ -99,6 +118,38 @@ class Library {
 
   get history(): HistoryItem[] {
     return this.data.history
+  }
+
+  /* ---- 标签 / CV 收藏 ---- */
+
+  get liked(): LikedItem[] {
+    return this.data.liked
+  }
+
+  likedOf(kind: LikeKind): LikedItem[] {
+    return this.data.liked.filter((it) => it.kind === kind)
+  }
+
+  isLiked(kind: LikeKind, value: string): boolean {
+    return this.data.liked.some((it) => it.kind === kind && it.value === value)
+  }
+
+  /** 返回切换后的状态：true 表示现在已收藏。 */
+  toggleLike(kind: LikeKind, value: string): boolean {
+    const has = this.isLiked(kind, value)
+    if (has) {
+      this.data.liked = this.data.liked.filter((it) => !(it.kind === kind && it.value === value))
+      this.save()
+      return false
+    }
+    this.data.liked = [{ kind, value, at: Date.now() }, ...this.data.liked]
+    this.save()
+    return true
+  }
+
+  clearLiked(kind?: LikeKind) {
+    this.data.liked = kind == null ? [] : this.data.liked.filter((it) => it.kind !== kind)
+    this.save()
   }
 
   get tracks(): ListenRecord[] {

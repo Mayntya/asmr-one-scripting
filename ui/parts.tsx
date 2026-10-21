@@ -7,11 +7,14 @@ export function PageHeader({
   right,
   onRight,
   back,
+  trailing,
 }: {
   title: string
   right?: string
   onRight?: () => void
   back?: boolean
+  /** 右侧额外控件（圆形按钮之类），排在 right 文字后面。 */
+  trailing?: any
 }) {
   const T = usePalette()
   const dismiss = Navigation.useDismiss()
@@ -45,6 +48,7 @@ export function PageHeader({
             {right}
           </Text>
         ) : null}
+        {trailing ?? null}
       </HStack>
     </ZStack>
   )

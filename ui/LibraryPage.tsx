@@ -4,6 +4,7 @@ import {
   HStack,
   Image,
   Navigation,
+  NavigationLink,
   ProgressView,
   Rectangle,
   ScrollView,
@@ -15,13 +16,15 @@ import {
   useState,
 } from "scripting"
 import { flattenAudio, formatDuration, getTracks } from "../lib/api"
-import type { HistoryItem } from "../lib/store"
+import type { HistoryItem, LikedItem, LikeKind } from "../lib/store"
 import { library } from "../lib/store"
 import { player } from "../lib/player"
+import { circleTone, cvTone, tagTone, toneColors } from "../lib/palette"
 import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
 import { WorkCard } from "./WorkCard"
 import { WorkDetail } from "./WorkDetail"
 import { PlayerPage } from "./PlayerView"
+import { TagPage } from "./TagPage"
 import { PageHeader } from "./parts"
 
 function useLibraryVersion() {
@@ -74,34 +77,127 @@ function Empty({ icon, text }: { icon: string; text: string }) {
   )
 }
 
-export function FavoritesPage({ onClose }: { onClose: () => void }) {
+export function FavoritesPage({
+  onClose,
+  initialSeg = "works",
+}: {
+  onClose: () => void
+  initialSeg?: LikeKind | "works"
+}) {
   const T = usePalette()
   useLibraryVersion()
-  const items = library.favorites
+  const [seg, setSeg] = useState<LikeKind | "works">(initialSeg)
+  const favs = library.favorites
+  const tags = library.likedOf("tag")
+  const cvs = library.likedOf("cv")
 
   useEffect(() => {
     library.syncCloud()
   }, [])
 
+  const SEGS: { key: LikeKind | "works"; label: string; n: number }[] = [
+    { key: "works", label: "作品", n: favs.length },
+    { key: "tag", label: "标签", n: tags.length },
+    { key: "cv", label: "CV", n: cvs.length },
+  ]
+
   return (
     <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }} background={T.bg}>
       <Rectangle fill={T.bg} ignoresSafeArea />
       <ScrollView navigationBarVisibility="hidden">
-      <VStack spacing={10} padding={{ horizontal: 16, top: 8, bottom: 150 }} frame={{ maxWidth: Infinity }}>
+      <VStack spacing={12} padding={{ horizontal: 16, top: 8, bottom: 150 }} frame={{ maxWidth: Infinity }}>
         <PageHeader title="资料库" right="完成" onRight={onClose} />
 
-        {items.length === 0 ? (
-          <Empty icon="heart.slash" text="资料库是空的。在作品页点一下心就进来了。" />
+        <HStack spacing={8} frame={{ maxWidth: Infinity }}>
+          {SEGS.map((s) => {
+            const on = s.key === seg
+            return (
+              <Text
+                key={s.key}
+                font="subheadline"
+                fontWeight="semibold"
+                foregroundStyle={on ? T.onAccent : T.sub}
+                padding={{ horizontal: 14, vertical: 7 }}
+                background={on ? T.accent : T.card}
+                clipShape={{ type: "rect", cornerRadius: 9 }}
+                contentShape="rect"
+                onTapGesture={() => setSeg(s.key)}
+              >
+                {s.n > 0 ? `${s.label} ${s.n}` : s.label}
+              </Text>
+            )
+          })}
+          <Spacer />
+        </HStack>
+
+        {seg === "works" ? (
+          favs.length === 0 ? (
+            <Empty icon="heart.slash" text="还没有收藏的作品。作品页点一下心就进来了。" />
+          ) : (
+            <VStack spacing={8} frame={{ maxWidth: Infinity }}>
+              {favs.map((w) => (
+                <WorkCard key={w.id} work={w} />
+              ))}
+            </VStack>
+          )
         ) : (
-          <VStack spacing={8} frame={{ maxWidth: Infinity }}>
-            {items.map((w) => (
-              <WorkCard work={w} />
-            ))}
-          </VStack>
+          <LikedList
+            kind={seg}
+            items={seg === "tag" ? tags : cvs}
+            emptyText={
+              seg === "tag"
+                ? "还没收藏标签。进任意标签页，点右上角的心。"
+                : "还没收藏 CV。进任意 CV 页，点右上角的心。"
+            }
+          />
         )}
       </VStack>
       </ScrollView>
     </ZStack>
+  )
+}
+
+/** 收藏的标签 / CV 列表，点进对应页面。 */
+function LikedList({ kind, items, emptyText }: { kind: LikeKind; items: LikedItem[]; emptyText: string }) {
+  const T = usePalette()
+  if (items.length === 0) return <Empty icon="heart.slash" text={emptyText} />
+
+  return (
+    <VStack spacing={8} frame={{ maxWidth: Infinity }}>
+      {items.map((it) => {
+        const tone = kind === "cv" ? cvTone(it.value) : kind === "circle" ? circleTone(it.value) : tagTone(it.value)
+        const c = toneColors(tone, T.scheme === "dark")
+        return (
+          <NavigationLink
+            key={`${it.kind}-${it.value}`}
+            destination={<TagPage kind={it.kind} value={it.value} />}
+            buttonStyle="plain"
+          >
+            <HStack
+              spacing={11}
+              padding={{ horizontal: 12, vertical: 11 }}
+              background={T.card}
+              clipShape={shape(12)}
+              frame={{ maxWidth: Infinity }}
+            >
+              <ZStack frame={{ width: 30, height: 30 }} background={c.bg} clipShape={shape(8)}>
+                <Image
+                  systemName={kind === "cv" ? "mic.fill" : kind === "circle" ? "building.2.fill" : "number"}
+                  font="caption"
+                  fontWeight="semibold"
+                  foregroundStyle={c.fg}
+                />
+              </ZStack>
+              <Text font="subheadline" fontWeight="medium" foregroundStyle={T.text} lineLimit={1}>
+                {it.value}
+              </Text>
+              <Spacer />
+              <Image systemName="chevron.right" font="caption2" fontWeight="semibold" foregroundStyle={T.faint} />
+            </HStack>
+          </NavigationLink>
+        )
+      })}
+    </VStack>
   )
 }
 
