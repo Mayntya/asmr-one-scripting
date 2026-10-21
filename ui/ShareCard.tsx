@@ -161,7 +161,7 @@ function ShareCardClassic({
   )
 }
 
-/** 新版：深底编辑感，封面正方满幅，信息左对齐，编号退到角上。 */
+/** 新版：深底海报感，封面出血满幅，信息区左对齐，比经典款少一层内边距。 */
 function ShareCardPoster({
   work,
   cover,
@@ -173,80 +173,80 @@ function ShareCardPoster({
   width: number
   signature: string
 }) {
-  const PAD2 = 14
-  const INNER = width - PAD2 * 2
+  const COVER_H = Math.round((width * 3) / 4)
 
   return (
     <VStack
       spacing={0}
-      padding={PAD2}
       background={DARK}
       clipShape={shape(26)}
       shadow={{ color: "rgba(21,17,20,0.34)", radius: 28, y: 12 }}
       frame={{ width }}
     >
-      <HStack spacing={0} frame={{ maxWidth: Infinity }}>
-        <Text font="caption2" fontWeight="bold" foregroundStyle="rgba(255,255,255,0.40)">
-          A S M R . O N E
-        </Text>
-        <Spacer />
-        <Text font="caption2" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.30)">
-          {rjCode(work)}
-        </Text>
-      </HStack>
-
       <Image
         {...coverSource(work, cover)}
         resizable
-        aspectRatio={{ value: 1, contentMode: "fill" }}
-        frame={{ width: INNER, height: INNER }}
-        clipShape={shape(18)}
-        padding={{ top: 12 }}
-        placeholder={
-          <Rectangle fill={DARK_SOFT} frame={{ width: INNER, height: INNER }} clipShape={shape(18)} />
-        }
+        aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
+        frame={{ width, height: COVER_H }}
+        placeholder={<Rectangle fill={DARK_SOFT} frame={{ width, height: COVER_H }} />}
       />
 
-      <VStack spacing={9} padding={{ top: 16 }} frame={{ maxWidth: Infinity }}>
-        <Text
-          font="headline"
-          fontWeight="bold"
-          foregroundStyle="#FFFFFF"
-          multilineTextAlignment="leading"
-          lineLimit={2}
-          frame={{ maxWidth: Infinity, alignment: "leading" }}
-        >
-          {work.title}
-        </Text>
-        <Text
-          font="subheadline"
-          foregroundStyle="rgba(255,255,255,0.55)"
-          multilineTextAlignment="leading"
-          lineLimit={1}
-          frame={{ maxWidth: Infinity, alignment: "leading" }}
-        >
-          {credit(work)}
-        </Text>
-      </VStack>
-
-      <HStack spacing={0} padding={{ top: 16 }} frame={{ maxWidth: Infinity }}>
-        <Rectangle fill="rgba(255,255,255,0.12)" frame={{ maxWidth: Infinity, height: 0.5 }} />
-      </HStack>
-
-      <HStack spacing={10} padding={{ top: 12 }} frame={{ maxWidth: Infinity }}>
-        <Waveform seed={work.id} color="255,92,141" count={24} />
-        <Spacer />
-        <HStack spacing={6}>
-          <ZStack frame={{ width: 22, height: 22 }} background={ACCENT} clipShape="circle">
-            <Text font="caption2" fontWeight="bold" foregroundStyle="#2A0E17">
-              A
-            </Text>
-          </ZStack>
-          <Text font="caption" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.74)" lineLimit={1}>
-            {signature}
+      <VStack
+        spacing={0}
+        padding={{ horizontal: 16, top: 15, bottom: 15 }}
+        frame={{ maxWidth: Infinity }}
+      >
+        <HStack spacing={0} frame={{ maxWidth: Infinity }}>
+          <Text font="caption2" fontWeight="bold" foregroundStyle="rgba(255,255,255,0.40)">
+            A S M R . O N E
+          </Text>
+          <Spacer />
+          <Text font="caption2" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.30)">
+            {rjCode(work)}
           </Text>
         </HStack>
-      </HStack>
+
+        <VStack spacing={7} padding={{ top: 10 }} frame={{ maxWidth: Infinity }}>
+          <Text
+            font="headline"
+            fontWeight="bold"
+            foregroundStyle="#FFFFFF"
+            multilineTextAlignment="leading"
+            lineLimit={2}
+            frame={{ maxWidth: Infinity, alignment: "leading" }}
+          >
+            {work.title}
+          </Text>
+          <Text
+            font="subheadline"
+            foregroundStyle="rgba(255,255,255,0.55)"
+            multilineTextAlignment="leading"
+            lineLimit={1}
+            frame={{ maxWidth: Infinity, alignment: "leading" }}
+          >
+            {credit(work)}
+          </Text>
+        </VStack>
+
+        <HStack spacing={0} padding={{ top: 14 }} frame={{ maxWidth: Infinity }}>
+          <Rectangle fill="rgba(255,255,255,0.12)" frame={{ maxWidth: Infinity, height: 0.5 }} />
+        </HStack>
+
+        <HStack spacing={10} padding={{ top: 12 }} frame={{ maxWidth: Infinity }}>
+          <Waveform seed={work.id} color="255,92,141" count={24} />
+          <Spacer />
+          <HStack spacing={6}>
+            <ZStack frame={{ width: 22, height: 22 }} background={ACCENT} clipShape="circle">
+              <Text font="caption2" fontWeight="bold" foregroundStyle="#2A0E17">
+                A
+              </Text>
+            </ZStack>
+            <Text font="caption" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.74)" lineLimit={1}>
+              {signature}
+            </Text>
+          </HStack>
+        </HStack>
+      </VStack>
     </VStack>
   )
 }
