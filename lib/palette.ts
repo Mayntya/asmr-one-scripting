@@ -57,6 +57,10 @@ export function cvTone(name: string): Tone {
   return TONES[hashOf("V:" + name) % TONES.length]
 }
 
+export function circleTone(name: string): Tone {
+  return TONES[hashOf("C:" + name) % TONES.length]
+}
+
 /** 按当前主题取前景/背景。 */
 export function toneColors(tone: Tone, dark: boolean) {
   return dark ? { fg: tone.fg, bg: tone.bg } : { fg: tone.fgLight, bg: tone.bgLight }

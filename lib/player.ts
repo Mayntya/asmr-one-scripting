@@ -162,19 +162,34 @@ class PlayerController {
     } catch {}
   }
 
+  /** 诊断日志：只在出错时落盘，不挡播放。 */
+  private note(msg: string) {
+    try {
+      const f = FileManager.appGroupDocumentsDirectory + "asmr-player.log"
+      const prev = FileManager.existsSync(f) ? FileManager.readAsStringSync(f) : ""
+      FileManager.writeAsStringSync(f, (prev + new Date().toISOString() + " " + msg + "\n").slice(-4000))
+    } catch {}
+  }
+
   private async prepareSession() {
-    if (this.sessionReady) return
-    this.sessionReady = true
+    if (this.sessionReady) {
+      this.setupRemote()
+      return
+    }
     try {
       await SharedAudioSession.setCategory("playback", ["allowBluetoothA2DP", "allowAirPlay"])
       await SharedAudioSession.setActive(true)
-    } catch {}
+      this.sessionReady = true
+    } catch (e: any) {
+      // 之前这里把 ready 置在了 try 之前，一次失败就永不再试——锁屏信息就是这没的
+      this.sessionReady = false
+      this.note("audio session failed: " + String(e?.message ?? e))
+    }
     this.setupRemote()
   }
 
   private setupRemote() {
     if (this.remoteReady) return
-    this.remoteReady = true
     try {
       MediaPlayer.setAvailableCommands([
         "play",
@@ -203,7 +218,11 @@ class PlayerController {
           this.seek(target)
         }
       }
-    } catch {}
+      this.remoteReady = true
+    } catch (e: any) {
+      this.remoteReady = false
+      this.note("remote setup failed: " + String(e?.message ?? e))
+    }
   }
 
   /** 锁屏封面，拉一次存着。 */
@@ -241,16 +260,23 @@ class PlayerController {
         artist: work.circle,
         albumTitle: work.title,
         playbackRate: this.state.playing ? 1 : 0,
-        elapsedPlaybackTime: this.state.time,
-        playbackDuration: this.state.duration,
+        elapsedPlaybackTime: Math.max(0, Math.floor(this.state.time)),
+        playbackDuration: Math.max(0, Math.floor(this.state.duration)),
         artwork: this.artwork ?? undefined,
       }
       MediaPlayer.playbackState = this.state.playing
         ? MediaPlayerPlaybackState.playing
         : MediaPlayerPlaybackState.paused
-    } catch {
+    } catch (e: any) {
       // 锁屏信息设置失败不影响播放
+      this.note("now playing failed: " + String(e?.message ?? e))
     }
+  }
+
+  /** 界面重新出现时强制推一次，iOS 偶尔会丢掉第一次注册。 */
+  refreshNowPlaying() {
+    this.lastNowPlaying = ""
+    this.syncNowPlaying(true)
   }
 
   playList(work: Work, tracks: TrackNode[], index: number, nodes?: TrackNode[]) {

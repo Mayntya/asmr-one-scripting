@@ -1,7 +1,7 @@
 import { HStack, ProgressView, Rectangle, ScrollView, Spacer, Text, VStack, ZStack, useEffect, useState } from "scripting"
 import type { SortKey, Work } from "../lib/api"
 import { searchWorks } from "../lib/api"
-import { cvTone, tagTone, toneColors } from "../lib/palette"
+import { circleTone, cvTone, tagTone, toneColors } from "../lib/palette"
 import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
 import { EmptyState, PageHeader } from "./parts"
 import { WorkCard } from "./WorkCard"
@@ -17,7 +17,9 @@ const ORDERS: { key: SortKey; label: string }[] = [
 /** 请求序号，慢的旧请求不许盖掉新结果。 */
 let tagSeq = 0
 
-export function TagPage({ kind, value }: { kind: "tag" | "cv"; value: string }) {
+export type TagKind = "tag" | "cv" | "circle"
+
+export function TagPage({ kind, value }: { kind: TagKind; value: string }) {
   const T = usePalette()
   const [order, setOrder] = useState<SortKey>("release")
   const [works, setWorks] = useState<Work[]>([])
@@ -26,8 +28,8 @@ export function TagPage({ kind, value }: { kind: "tag" | "cv"; value: string }) 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const tone = kind === "tag" ? tagTone(value) : cvTone(value)
-  const query = kind === "tag" ? `$tag:${value}$` : `$va:${value}$`
+  const tone = kind === "tag" ? tagTone(value) : kind === "cv" ? cvTone(value) : circleTone(value)
+  const query = kind === "tag" ? `$tag:${value}$` : kind === "cv" ? `$va:${value}$` : `$circle:${value}$`
 
   const load = async (p: number, o: SortKey) => {
     const mine = ++tagSeq
@@ -67,7 +69,7 @@ export function TagPage({ kind, value }: { kind: "tag" | "cv"; value: string }) 
             background={toneColors(tone, T.scheme === "dark").bg}
             clipShape={{ type: "rect", cornerRadius: 6 }}
           >
-            {kind === "tag" ? "标签" : "CV"}
+            {kind === "tag" ? "标签" : kind === "cv" ? "CV" : "社团"}
           </Text>
           <Text font="caption2" foregroundStyle={T.faint}>
             {total > 0 ? `共 ${total} 部` : loading ? "查询中…" : ""}
@@ -109,7 +111,7 @@ export function TagPage({ kind, value }: { kind: "tag" | "cv"; value: string }) 
 
         {!loading && works.length === 0 && error == null ? (
           <EmptyState
-            icon={kind === "tag" ? "tag.slash" : "person.crop.circle.badge.questionmark"}
+            icon={kind === "tag" ? "tag.slash" : kind === "cv" ? "person.crop.circle.badge.questionmark" : "building.2"}
             text="没有找到作品。"
           />
         ) : (

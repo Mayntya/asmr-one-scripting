@@ -1,7 +1,35 @@
-import { HStack, Image, Rectangle, ScrollView, Spacer, Text, VStack, ZStack } from "scripting"
+import { HStack, Image, NavigationLink, Rectangle, ScrollView, Spacer, Text, VStack, ZStack } from "scripting"
+import type { Work } from "../lib/api"
+import { cvTone, tagTone, toneColors } from "../lib/palette"
 import { NIGHT_HOURS, fmtHM, hourLabel, totals, topLoops, topVas } from "../lib/stats"
+import type { ListenRecord } from "../lib/store"
+import { library } from "../lib/store"
 import { shape, usePalette } from "../lib/theme"
 import { EmptyState, GroupLabel, ListCard, PageHeader } from "./parts"
+import { TagPage } from "./TagPage"
+import { WorkDetail } from "./WorkDetail"
+
+/** 用收听记录拼出作品对象，缓存里有真身就用真身。 */
+function workOf(rec: ListenRecord): Work {
+  const hit = library.cachedWorks.find((w) => w.id === rec.workId)
+  if (hit != null) return hit
+  return {
+    id: rec.workId,
+    title: rec.workTitle,
+    circle: rec.circle,
+    vas: rec.vas,
+    tags: rec.tags,
+    duration: 0,
+    nsfw: false,
+    rate: 0,
+    rateCount: 0,
+    dlCount: 0,
+    release: "",
+    cover: rec.cover,
+    thumb: rec.cover,
+    samCover: rec.cover,
+  }
+}
 
 function Bar({ seconds, max, night }: { seconds: number; max: number; night: boolean }) {
   const T = usePalette()
@@ -19,6 +47,7 @@ function Bar({ seconds, max, night }: { seconds: number; max: number; night: boo
 
 export function StatsPage() {
   const T = usePalette()
+  const dark = T.scheme === "dark"
   const t = totals()
   const loops = topLoops(1)[0]
   const vas = topVas(3)
@@ -101,24 +130,33 @@ export function StatsPage() {
               <>
                 <GroupLabel text="最常播放" />
                 <ListCard>
-                  <HStack spacing={12} padding={{ horizontal: 14, vertical: 12 }} frame={{ maxWidth: Infinity }}>
-                    <ZStack
-                      frame={{ width: 29, height: 29 }}
-                      background={T.accentSoft}
-                      clipShape={shape(7)}
+                  <NavigationLink destination={<WorkDetail work={workOf(loops)} />} buttonStyle="plain">
+                    <HStack
+                      spacing={12}
+                      padding={{ horizontal: 14, vertical: 12 }}
+                      frame={{ maxWidth: Infinity }}
+                      alignment="center"
+                      contentShape="rect"
                     >
-                      <Image systemName="repeat" font="footnote" fontWeight="semibold" foregroundStyle={T.accentText} />
-                    </ZStack>
-                    <VStack alignment="leading" spacing={2}>
-                      <Text font="body" lineLimit={1} foregroundStyle={T.text}>
-                        {loops.trackTitle}
-                      </Text>
-                      <Text font="caption2" foregroundStyle={T.faint} lineLimit={1}>
-                        {`播放 ${loops.plays} 次 · ${fmtHM(loops.seconds)}`}
-                      </Text>
-                    </VStack>
-                    <Spacer />
-                  </HStack>
+                      <ZStack frame={{ width: 29, height: 29 }} background={toneColors(tagTone(loops.trackTitle), dark).bg} clipShape={shape(7)}>
+                        <Image
+                          systemName="repeat"
+                          font="footnote"
+                          fontWeight="semibold"
+                          foregroundStyle={toneColors(tagTone(loops.trackTitle), dark).fg}
+                        />
+                      </ZStack>
+                      <VStack alignment="leading" spacing={2} frame={{ maxWidth: Infinity, alignment: "leading" }}>
+                        <Text font="body" lineLimit={1} foregroundStyle={T.text} frame={{ maxWidth: Infinity, alignment: "leading" }}>
+                          {loops.trackTitle}
+                        </Text>
+                        <Text font="caption2" foregroundStyle={T.faint} lineLimit={1}>
+                          {`播放 ${loops.plays} 次 · ${fmtHM(loops.seconds)}`}
+                        </Text>
+                      </VStack>
+                      <Image systemName="chevron.right" font="caption2" foregroundStyle={T.faint} />
+                    </HStack>
+                  </NavigationLink>
                 </ListCard>
               </>
             ) : null}
@@ -127,42 +165,49 @@ export function StatsPage() {
               <>
                 <GroupLabel text="常听的声优" />
                 <ListCard>
-                  {vas.map((v, i) => (
-                    <VStack spacing={0} frame={{ maxWidth: Infinity }}>
-                      <HStack
-                        spacing={12}
-                        padding={{ horizontal: 14, vertical: 12 }}
-                        frame={{ maxWidth: Infinity }}
-                        alignment="center"
-                      >
-                        <Text
-                          font="footnote"
-                          fontWeight="semibold"
-                          foregroundStyle={T.accentText}
-                          frame={{ width: 29, height: 29 }}
-                          background={T.cardHi}
-                          clipShape={shape(7)}
-                          multilineTextAlignment="center"
-                        >
-                          {String(i + 1)}
-                        </Text>
-                        <Text font="body" lineLimit={1} foregroundStyle={T.text}>
-                          {v.name}
-                        </Text>
-                        <Spacer />
-                        <Text font="footnote" foregroundStyle={T.faint}>
-                          {fmtHM(v.seconds)}
-                        </Text>
-                      </HStack>
-                      {i === vas.length - 1 ? null : (
-                        <Rectangle
-                          fill={T.border}
-                          frame={{ maxWidth: "infinity", height: 0.5 }}
-                          padding={{ leading: 55 }}
-                        />
-                      )}
-                    </VStack>
-                  ))}
+                  {vas.map((v, i) => {
+                    const c = toneColors(cvTone(v.name), dark)
+                    return (
+                      <VStack spacing={0} frame={{ maxWidth: Infinity }}>
+                        <NavigationLink destination={<TagPage kind="cv" value={v.name} />} buttonStyle="plain">
+                          <HStack
+                            spacing={12}
+                            padding={{ horizontal: 14, vertical: 12 }}
+                            frame={{ maxWidth: Infinity }}
+                            alignment="center"
+                            contentShape="rect"
+                          >
+                            <Text
+                              font="footnote"
+                              fontWeight="semibold"
+                              foregroundStyle={c.fg}
+                              frame={{ width: 29, height: 29 }}
+                              background={c.bg}
+                              clipShape={shape(7)}
+                              multilineTextAlignment="center"
+                            >
+                              {String(i + 1)}
+                            </Text>
+                            <Text font="body" lineLimit={1} foregroundStyle={T.text}>
+                              {v.name}
+                            </Text>
+                            <Spacer />
+                            <Text font="footnote" foregroundStyle={T.faint}>
+                              {fmtHM(v.seconds)}
+                            </Text>
+                            <Image systemName="chevron.right" font="caption2" foregroundStyle={T.faint} />
+                          </HStack>
+                        </NavigationLink>
+                        {i === vas.length - 1 ? null : (
+                          <Rectangle
+                            fill={T.border}
+                            frame={{ maxWidth: "infinity", height: 0.5 }}
+                            padding={{ leading: 55 }}
+                          />
+                        )}
+                      </VStack>
+                    )
+                  })}
                 </ListCard>
               </>
             ) : null}

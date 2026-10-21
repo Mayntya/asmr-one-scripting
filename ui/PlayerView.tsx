@@ -125,9 +125,9 @@ export function MiniPlayer() {
             onTapGesture={() => player.next()}
           />
         </HStack>
-        <ZStack frame={{ width: barW, height: 2 }} alignment="leading" background={T.border}>
+        <HStack spacing={0} frame={{ width: barW, height: 2 }} background={T.border}>
           <Rectangle fill={T.accent} frame={{ width: Math.max(2, barW * pct), height: 2 }} />
-        </ZStack>
+        </HStack>
       </VStack>
     </VStack>
   )
@@ -149,6 +149,7 @@ function Scrubber({
   const pct = dragging == null ? base : dragging
   const h = dragging == null ? 4 : 8
   const clamp = (x: number) => Math.min(1, Math.max(0, x / barW))
+  const fillW = Math.max(2, barW * pct)
 
   return (
     <ZStack
@@ -161,15 +162,15 @@ function Scrubber({
           setDragging(null)
         })}
     >
-      <ZStack
+      <HStack
+        spacing={0}
         frame={{ width: barW, height: h }}
-        alignment="leading"
-        clipShape="capsule"
         background="rgba(255,255,255,0.26)"
+        clipShape="capsule"
         animation={{ animation: Animation.easeOut(0.18), value: h }}
       >
-        <Rectangle fill={ON.text} frame={{ width: Math.max(2, barW * pct), height: h }} clipShape="capsule" />
-      </ZStack>
+        <Rectangle fill={ON.text} frame={{ width: fillW, height: h }} clipShape="capsule" />
+      </HStack>
     </ZStack>
   )
 }
@@ -183,6 +184,14 @@ export function PlayerPage() {
   const track = state.tracks[state.index]
 
   const [mesh, setMesh] = useState<Mesh>(() => meshFor(work?.cover))
+  // 进/出播放页各推一次锁屏信息，免得系统把首次注册丢了
+  useEffect(() => {
+    player.refreshNowPlaying()
+    return () => {
+      player.refreshNowPlaying()
+    }
+  }, [])
+
   useEffect(() => {
     let alive = true
     const cover = work?.cover

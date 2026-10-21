@@ -3,6 +3,7 @@ import { toneColors } from "../lib/palette"
 import type { Tone } from "../lib/palette"
 import { usePalette } from "../lib/theme"
 import { TagPage } from "./TagPage"
+import type { TagKind } from "./TagPage"
 
 export function Chip({ text, tone }: { text: string; tone: Tone }) {
   const T = usePalette()
@@ -22,7 +23,7 @@ export function Chip({ text, tone }: { text: string; tone: Tone }) {
   )
 }
 
-export function TagLink({ text, tone, kind }: { text: string; tone: Tone; kind: "tag" | "cv" }) {
+export function TagLink({ text, tone, kind }: { text: string; tone: Tone; kind: TagKind }) {
   return (
     <NavigationLink destination={<TagPage kind={kind} value={text} />} buttonStyle="plain">
       <Chip text={text} tone={tone} />

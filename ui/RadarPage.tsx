@@ -1,10 +1,13 @@
-import { HStack, LazyVGrid, Rectangle, ScrollView, Spacer, Text, VStack } from "scripting"
+import { HStack, Image, LazyVGrid, NavigationLink, Rectangle, ScrollView, Spacer, Text, VStack } from "scripting"
+import { circleTone, tagTone, toneColors } from "../lib/palette"
 import { fmtHM, topCircles, topTags } from "../lib/stats"
 import { shape, usePalette } from "../lib/theme"
 import { EmptyState, GroupLabel, ListCard, PageHeader } from "./parts"
+import { TagPage } from "./TagPage"
 
 export function RadarPage() {
   const T = usePalette()
+  const dark = T.scheme === "dark"
   const circles = topCircles(10)
   const tags = topTags(20)
 
@@ -21,34 +24,46 @@ export function RadarPage() {
               <>
                 <GroupLabel text="常听的社团" />
                 <ListCard>
-                  {circles.map((c, i) => (
-                    <VStack spacing={0} frame={{ maxWidth: Infinity }}>
-                      <HStack
-                        spacing={12}
-                        padding={{ horizontal: 14, vertical: 12 }}
-                        frame={{ maxWidth: Infinity }}
-                        alignment="center"
-                      >
-                        <Text font="body" lineLimit={1} foregroundStyle={T.text}>
-                          {c.name}
-                        </Text>
-                        <Spacer />
-                        <Text font="caption2" foregroundStyle={T.faint}>
-                          {`${c.works} 部`}
-                        </Text>
-                        <Text font="footnote" foregroundStyle={T.sub}>
-                          {fmtHM(c.seconds)}
-                        </Text>
-                      </HStack>
-                      {i === circles.length - 1 ? null : (
-                        <Rectangle
-                          fill={T.border}
-                          frame={{ maxWidth: "infinity", height: 0.5 }}
-                          padding={{ leading: 14 }}
-                        />
-                      )}
-                    </VStack>
-                  ))}
+                  {circles.map((item, i) => {
+                    const c = toneColors(circleTone(item.name), dark)
+                    return (
+                      <VStack spacing={0} frame={{ maxWidth: Infinity }}>
+                        <NavigationLink destination={<TagPage kind="circle" value={item.name} />} buttonStyle="plain">
+                          <HStack
+                            spacing={10}
+                            padding={{ horizontal: 14, vertical: 12 }}
+                            frame={{ maxWidth: Infinity }}
+                            alignment="center"
+                            contentShape="rect"
+                          >
+                            <Rectangle fill={c.fg} frame={{ width: 8, height: 8 }} clipShape="capsule" />
+                            <Text
+                              font="body"
+                              lineLimit={1}
+                              foregroundStyle={T.text}
+                              frame={{ maxWidth: Infinity, alignment: "leading" }}
+                            >
+                              {item.name}
+                            </Text>
+                            <Text font="caption2" foregroundStyle={T.faint}>
+                              {`${item.works} 部`}
+                            </Text>
+                            <Text font="footnote" foregroundStyle={T.sub}>
+                              {fmtHM(item.seconds)}
+                            </Text>
+                            <Image systemName="chevron.right" font="caption2" foregroundStyle={T.faint} />
+                          </HStack>
+                        </NavigationLink>
+                        {i === circles.length - 1 ? null : (
+                          <Rectangle
+                            fill={T.border}
+                            frame={{ maxWidth: "infinity", height: 0.5 }}
+                            padding={{ leading: 32 }}
+                          />
+                        )}
+                      </VStack>
+                    )
+                  })}
                 </ListCard>
               </>
             ) : null}
@@ -62,22 +77,32 @@ export function RadarPage() {
               ]}
               spacing={8}
             >
-              {tags.map((t) => (
-                <HStack
-                  spacing={6}
-                  padding={{ horizontal: 12, vertical: 10 }}
-                  background={T.card}
-                  clipShape={shape(10)}
-                  frame={{ maxWidth: Infinity }}
-                >
-                  <Text font="caption" lineLimit={1} frame={{ maxWidth: Infinity, alignment: "leading" }}>
-                    {t.name}
-                  </Text>
-                  <Text font="caption2" foregroundStyle={T.faint} lineLimit={1}>
-                    {fmtHM(t.seconds)}
-                  </Text>
-                </HStack>
-              ))}
+              {tags.map((tag) => {
+                const c = toneColors(tagTone(tag.name), dark)
+                return (
+                  <NavigationLink
+                    key={tag.name}
+                    destination={<TagPage kind="tag" value={tag.name} />}
+                    buttonStyle="plain"
+                  >
+                    <HStack
+                      spacing={6}
+                      padding={{ horizontal: 12, vertical: 10 }}
+                      background={c.bg}
+                      clipShape={shape(10)}
+                      frame={{ maxWidth: Infinity }}
+                      contentShape="rect"
+                    >
+                      <Text font="caption" lineLimit={1} foregroundStyle={c.fg} frame={{ maxWidth: Infinity, alignment: "leading" }}>
+                        {tag.name}
+                      </Text>
+                      <Text font="caption2" foregroundStyle={c.fg} opacity={0.65} lineLimit={1}>
+                        {fmtHM(tag.seconds)}
+                      </Text>
+                    </HStack>
+                  </NavigationLink>
+                )
+              })}
             </LazyVGrid>
           </>
         )}
