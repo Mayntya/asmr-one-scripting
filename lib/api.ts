@@ -272,18 +272,82 @@ export function flattenAudio(nodes: TrackNode[]): TrackNode[] {
   return out
 }
 
-/** 在文件树里找字幕文件，优先 .lrc。 */
-export function findSubtitle(nodes: TrackNode[]): TrackNode | null {
-  const hits: TrackNode[] = []
-  const walk = (list: TrackNode[]) => {
-    for (const n of list) {
-      if (n.type === "folder") walk(n.children)
-      else if (/\.(lrc|srt|ass|vtt)$/i.test(n.title) && n.url != null) hits.push(n)
+/** 字幕文件扩展名。 */
+const SUB_EXT = /\.(lrc|srt|vtt|ass)$/i
+
+function stripExt(title: string): string {
+  return title.replace(/\.[^.]+$/, "").trim().toLowerCase()
+}
+
+/** 多语言目录里挑一份：简体 > 裸目录 > 繁体 > 英日。 */
+function langScore(path: string): number {
+  const p = path.toLowerCase()
+  if (/简体|簡体|简中|chs|zh-cn|zh-hans/.test(p)) return 3
+  if (/繁體|繁体|cht|zh-tw|zh-hant/.test(p)) return 1
+  if (/english|英文|japanese|日本語|\.ja\.|\.en\./.test(p)) return 0
+  return 2
+}
+
+interface NodeHit {
+  node: TrackNode
+  dir: string
+}
+
+function collect(nodes: TrackNode[], dir: string, kind: "audio" | "sub", out: NodeHit[]) {
+  for (const n of nodes) {
+    if (n.type === "folder") {
+      collect(n.children, dir + n.title + "/", kind, out)
+    } else if (kind === "audio") {
+      if (n.type === "audio" && n.url != null) out.push({ node: n, dir })
+    } else if (SUB_EXT.test(n.title) && n.url != null) {
+      out.push({ node: n, dir })
     }
   }
-  walk(nodes)
-  const lrc = hits.find((n) => /\.lrc$/i.test(n.title))
-  return lrc ?? hits[0] ?? null
+}
+
+/**
+ * 给某一轨找它自己的字幕。asmr.one 上是**每轨一份**，常见命名：
+ * `1.序章.mp3` ↔ `1.序章.mp3.vtt`，或与音频同名的 `1.序章.lrc`
+ * （字幕常放在 LRC/ 、字幕（机翻）/ 之类另一层目录里）。
+ */
+export function pickSubtitle(nodes: TrackNode[], track: TrackNode): TrackNode | null {
+  const subs: NodeHit[] = []
+  collect(nodes, "", "sub", subs)
+  if (subs.length === 0) return null
+  const audios: NodeHit[] = []
+  collect(nodes, "", "audio", audios)
+
+  const self = audios.find((a) => a.node.key === track.key) ?? audios.find((a) => a.node.title === track.title)
+  const dir = self != null ? self.dir : ""
+  const tTitle = track.title.toLowerCase()
+  const tBase = stripExt(track.title)
+
+  let best: NodeHit | null = null
+  let bestScore = -1e9
+  for (const s of subs) {
+    const name = s.node.title.toLowerCase()
+    let score = 0
+    if (name === tTitle || name.startsWith(tTitle + ".")) score += 20
+    else if (tBase !== "" && stripExt(s.node.title) === tBase) score += 16
+    if (dir !== "" && s.dir === dir) score += 5
+    score += langScore(s.dir + s.node.title) * 0.1
+    if (score > bestScore) {
+      bestScore = score
+      best = s
+    }
+  }
+
+  if (best != null && bestScore >= 16) return best.node
+
+  // 名字完全对不上（逐轨命名各异时）：按同目录顺序对齐
+  const inDir = audios.filter((a) => a.dir === dir)
+  const i = self != null ? inDir.findIndex((a) => a.node.key === (self as NodeHit).node.key) : -1
+  if (i >= 0) {
+    const sameDirSubs = subs.filter((s) => s.dir === dir)
+    if (i < sameDirSubs.length) return sameDirSubs[i].node
+    if (i < subs.length) return subs[i].node
+  }
+  return best != null && bestScore > 0 ? best.node : subs[0].node
 }
 
 /** 拉文本资源（字幕用）。 */

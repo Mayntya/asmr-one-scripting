@@ -1,7 +1,7 @@
 import type { TrackNode, Work } from "./api"
-import { fetchText, findSubtitle, getTracks } from "./api"
+import { fetchText, getTracks, pickSubtitle } from "./api"
 import type { LrcCue } from "./lrc"
-import { parseLrc } from "./lrc"
+import { parseSubtitle } from "./lrc"
 import { library } from "./store"
 import { loadSession, saveSession } from "./session"
 
@@ -32,6 +32,8 @@ class PlayerController {
   private artwork: UIImage | null = null
   private artworkKey = ""
   private loaded = false
+  private treeCache = new Map<number, TrackNode[]>()
+  private lrcCache = new Map<string, LrcCue[]>()
 
   state: PlayerState = {
     work: null,
@@ -133,7 +135,7 @@ class PlayerController {
     this.loaded = false
     const track = s.tracks[s.index]
     if (track != null && s.time > 3) library.setTrackProgress(track.key, s.time)
-    this.loadSubtitle(s.work)
+    this.applySubtitle(s.index)
     this.loadArtwork(s.work)
     this.emit()
     return true
@@ -291,35 +293,54 @@ class PlayerController {
     this.state.work = work
     this.state.tracks = tracks
     this.state.error = null
-    if (!sameWork) {
-      this.state.lrc = []
-      this.loadSubtitle(work, nodes)
-      this.loadArtwork(work)
-    }
+    if (nodes != null) this.treeCache.set(work.id, nodes)
+    if (!sameWork) this.loadArtwork(work)
     this.load(index, true)
   }
 
-  private async loadSubtitle(work: Work, nodes?: TrackNode[]) {
-    this.state.subtitleLoading = true
-    this.emit()
-    try {
-      const tree = nodes ?? (await getTracks(work.id))
-      const sub = findSubtitle(tree)
-      if (sub == null || sub.url == null) {
-        this.state.lrc = []
-        this.state.subtitleLoading = false
-        this.emit()
-        return
-      }
-      const raw = await fetchText(sub.url)
-      this.state.lrc = parseLrc(raw)
-      this.state.subtitleLoading = false
-      this.emit()
-    } catch {
+  private async tree(work: Work): Promise<TrackNode[]> {
+    const hit = this.treeCache.get(work.id)
+    if (hit != null) return hit
+    const t = await getTracks(work.id)
+    this.treeCache.set(work.id, t)
+    return t
+  }
+
+  /** 字幕是每轨一份，切轨就得重取，不能拿第一轨的应付全程。 */
+  private async applySubtitle(index: number) {
+    const work = this.state.work
+    const track = this.state.tracks[index]
+    if (work == null || track == null) {
       this.state.lrc = []
       this.state.subtitleLoading = false
       this.emit()
+      return
     }
+    const ck = work.id + "|" + track.key
+    const cached = this.lrcCache.get(ck)
+    if (cached != null) {
+      this.state.lrc = cached
+      this.state.subtitleLoading = false
+      this.emit()
+      return
+    }
+    this.state.lrc = []
+    this.state.subtitleLoading = true
+    this.emit()
+    let cues: LrcCue[] = []
+    try {
+      const nodes = await this.tree(work)
+      const sub = pickSubtitle(nodes, track)
+      if (sub != null && sub.url != null) cues = parseSubtitle(await fetchText(sub.url), sub.title)
+    } catch {
+      cues = []
+    }
+    if (cues.length > 0) this.lrcCache.set(ck, cues)
+    // 等网络这阵子用户可能又切了，旧轨的结果丢掉
+    if (this.state.tracks[this.state.index] !== track) return
+    this.state.lrc = cues
+    this.state.subtitleLoading = false
+    this.emit()
   }
 
   toggleSubtitle() {
@@ -341,6 +362,7 @@ class PlayerController {
     this.state.duration = track.duration || 0
     this.state.error = null
     this.lastNowPlaying = ""
+    this.applySubtitle(index)
 
     // 断点：3 秒以内算没听，最后 5 秒算听完
     const resume = library.trackProgress(track.key)
