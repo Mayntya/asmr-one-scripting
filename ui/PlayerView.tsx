@@ -127,6 +127,7 @@ export function MiniPlayer() {
         </HStack>
         <HStack spacing={0} frame={{ width: barW, height: 2 }} background={T.border}>
           <Rectangle fill={T.accent} frame={{ width: Math.max(2, barW * pct), height: 2 }} />
+          <Spacer />
         </HStack>
       </VStack>
     </VStack>
@@ -170,6 +171,7 @@ function Scrubber({
         animation={{ animation: Animation.easeOut(0.18), value: h }}
       >
         <Rectangle fill={ON.text} frame={{ width: fillW, height: h }} clipShape="capsule" />
+        <Spacer />
       </HStack>
     </ZStack>
   )
