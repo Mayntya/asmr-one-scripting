@@ -20,26 +20,22 @@ let tagSeq = 0
 
 export type TagKind = "tag" | "cv" | "circle"
 
-/** 页面右上角的心形收藏按钮。标签 / CV / 社团共用。 */
+/** 页面右上角的心形收藏按钮。标签 / CV 页共用。 */
 function LikeButton({ kind, value }: { kind: TagKind; value: string }) {
   const T = usePalette()
   const [on, setOn] = useState(library.isLiked(kind, value))
   return (
-    <ZStack
-      frame={{ width: 38, height: 38 }}
-      background={on ? T.accentSoft : T.glassBg}
-      border={{ style: on ? T.accent : T.border, width: 0.6 }}
-      clipShape="circle"
-      contentShape="circle"
+    <HStack
+      frame={{ width: 36, height: 36 }}
+      contentShape="rect"
       onTapGesture={() => setOn(library.toggleLike(kind, value))}
     >
       <Image
         systemName={on ? "heart.fill" : "heart"}
-        font="subheadline"
-        fontWeight="semibold"
-        foregroundStyle={on ? T.accent : T.text}
+        font="title3"
+        foregroundStyle={on ? T.accent : T.sub}
       />
-    </ZStack>
+    </HStack>
   )
 }
 

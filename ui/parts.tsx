@@ -25,16 +25,13 @@ export function PageHeader({
       </Text>
       <HStack spacing={10} frame={{ maxWidth: Infinity }} alignment="center">
         {back === true ? (
-          <ZStack
-            frame={{ width: 38, height: 38 }}
-            background={T.glassBg}
-            border={{ style: T.border, width: 0.6 }}
-            clipShape="circle"
-            contentShape="circle"
+          <HStack
+            frame={{ width: 36, height: 36 }}
+            contentShape="rect"
             onTapGesture={() => dismiss()}
           >
-            <Image systemName="chevron.left" font="subheadline" fontWeight="semibold" foregroundStyle={T.text} />
-          </ZStack>
+            <Image systemName="chevron.left" font="title3" fontWeight="semibold" foregroundStyle={T.text} />
+          </HStack>
         ) : null}
         <Spacer />
         {right != null ? (
