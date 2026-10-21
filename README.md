@@ -18,12 +18,18 @@
 
 ## 安装
 
-1. 在 App Store 装 **Scripting**（iOS 17+）
-2. 把整个仓库文件夹放进 Scripting 的脚本目录：
-   `iCloud Drive/Scripting/scripts/ASMR_One/`
-3. 打开 Scripting，脚本列表里点 **ASMR One**
+**一键导入（推荐）**
 
-也可以把文件夹打包成 `.zip`，在 Scripting 里从文件导入。
+1. 在 App Store 装 **Scripting**（iOS 17+）
+2. 点这个链接，App 会自动下载并导入：
+
+   https://www.scripting.fun/import_scripts/?urls=%5B%22https%3A%2F%2Fgithub.com%2FMayntya%2Fasmr-one-scripting%2Freleases%2Fdownload%2Fv1.0.0%2FASMR-One.scripting%22%5D
+
+3. 脚本列表里点 **ASMR One**
+
+**手动安装**
+
+下载 [ASMR-One.scripting](https://github.com/Mayntya/asmr-one-scripting/releases/download/v1.0.0/ASMR-One.scripting)，用 Scripting 打开。或者把仓库整个文件夹放进 `iCloud Drive/Scripting/scripts/ASMR One/`。
 
 首次打开是空的，去「我的 → 账号」登录 asmr.one 之后就有内容了。
 
@@ -33,7 +39,7 @@
 index.tsx         入口，TabView + 播放器保活
 script.json       脚本元信息
 lib/
-  api.ts          asmr.one 接口，4 条线路自动故障转移
+  api.ts          asmr.one 接口，多个网关自动切换
   player.ts       AVPlayer 封装、锁屏、断点
   store.ts        收藏/历史/收听记录，落 asmr-library.json
   stats.ts        统计聚合
