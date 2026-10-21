@@ -165,7 +165,7 @@ class PlayerController {
   /** 诊断日志：只在出错时落盘，不挡播放。 */
   private note(msg: string) {
     try {
-      const f = FileManager.appGroupDocumentsDirectory + "asmr-player.log"
+      const f = FileManager.appGroupDocumentsDirectory + "/asmr-player.log"
       const prev = FileManager.existsSync(f) ? FileManager.readAsStringSync(f) : ""
       FileManager.writeAsStringSync(f, (prev + new Date().toISOString() + " " + msg + "\n").slice(-4000))
     } catch {}
@@ -176,15 +176,22 @@ class PlayerController {
       this.setupRemote()
       return
     }
+    // 实测（_probe_audio）：这个 SDK 的 setCategory 只要 options 非空就报 OSStatus -50，
+    // 给 defaultToSpeaker 也一样。空数组能过，playback 类目本来就外放，不缺那个选项。
+    let ok = true
     try {
-      await SharedAudioSession.setCategory("playback", ["allowBluetoothA2DP", "allowAirPlay"])
-      await SharedAudioSession.setActive(true)
-      this.sessionReady = true
+      await SharedAudioSession.setCategory("playback", [])
     } catch (e: any) {
-      // 之前这里把 ready 置在了 try 之前，一次失败就永不再试——锁屏信息就是这没的
-      this.sessionReady = false
-      this.note("audio session failed: " + String(e?.message ?? e))
+      ok = false
+      this.note("setCategory failed: " + String(e?.message ?? e))
     }
+    try {
+      await SharedAudioSession.setActive(true)
+    } catch (e: any) {
+      ok = false
+      this.note("setActive failed: " + String(e?.message ?? e))
+    }
+    this.sessionReady = ok
     this.setupRemote()
   }
 

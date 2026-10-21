@@ -88,34 +88,62 @@ function App() {
 }
 
 let uiOpen = false
+let uiToken = 0
 
-function openUI() {
-  if (uiOpen) return
+/** 启动轨迹落盘，出问题直接读这个文件，别猜。 */
+function log(msg: string) {
+  try {
+    const f = FileManager.appGroupDocumentsDirectory + "/asmr-launch.log"
+    const prev = FileManager.existsSync(f) ? FileManager.readAsStringSync(f) : ""
+    FileManager.writeAsStringSync(f, (prev + new Date().toISOString() + " " + msg + "\n").slice(-4000))
+  } catch {}
+}
+
+function openUI(why: string, attempt = 0) {
+  if (uiOpen) {
+    log(why + ": skipped, already open")
+    return
+  }
   uiOpen = true
+  const token = ++uiToken
+  log(why + ": present #" + attempt)
   Navigation.present({ element: <App />, modalPresentationStyle: "fullScreen" })
     .then(() => {
-      uiOpen = false
-      // 关界面的时侯还在放 -> 变成后台常驻；否则真的结束
+      log(why + ": dismissed")
+      if (token === uiToken) uiOpen = false
+      // 关界面的时候还在放 -> 变成后台常驻；否则真的结束
       if (player.state.playing) {
         Script.minimize()
       } else {
         Script.exit()
       }
     })
-    .catch(() => {
-      uiOpen = false
+    .catch((e: any) => {
+      log(why + ": present failed " + String(e?.message ?? e))
+      if (token === uiToken) uiOpen = false
+      // 宿主没立好时第一次 present 会被吃掉，稍后退一点再来
+      if (attempt < 2) sleep(250).then(() => openUI(why, attempt + 1))
     })
 }
 
-function run() {
+async function run() {
+  log("run: start")
   refreshAccount()
   library.syncCloud()
   player.restore()
-  openUI()
+  // 刚进脚本时宿主还没把 scene 立起来，present 太早会被静默吞掉——只留个后台图标
+  await sleep(120)
+  openUI("run")
+  log("run: openUI returned")
   // 让入口保持挂起，实例不因 run 返回而被回收
   return new Promise<void>(() => {})
 }
 
 Script.onResume(() => {
-  if (!uiOpen) openUI()
+  log("resume")
+  // 被唤回时本来就没有可见界面；标志位归零，否则一次没 resolve 的 present 就再也不弹了
+  uiOpen = false
+  openUI("resume")
 })
+
+run()
