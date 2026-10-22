@@ -81,7 +81,7 @@ export function StoragePage() {
           padding={{ horizontal: 16, vertical: 16 }}
           frame={{ maxWidth: Infinity, alignment: "leading" }}
           background={T.card}
-          clipShape={shape(12)}
+          clipShape={shape(16)}
         >
           <Text font="footnote" foregroundStyle={T.faint}>
             本机数据

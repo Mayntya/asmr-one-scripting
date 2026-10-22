@@ -163,7 +163,7 @@ export function TagPage({ kind, value }: { kind: TagKind; value: string }) {
             padding={{ vertical: 12 }}
             frame={{ maxWidth: Infinity }}
             background={T.accentText}
-            clipShape={shape(12)}
+            clipShape={shape(16)}
             contentShape="rect"
             onTapGesture={() => load(page + 1, order)}
           >

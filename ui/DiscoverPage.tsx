@@ -170,7 +170,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
           padding={{ horizontal: 12, vertical: 10 }}
           background={T.card}
           border={{ style: T.border, width: 0.6 }}
-          clipShape={shape(12)}
+          clipShape={shape(16)}
           frame={{ maxWidth: Infinity }}
         >
           <Image systemName="magnifyingglass" font="subheadline" foregroundStyle={T.sub} />
@@ -297,7 +297,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
             padding={{ vertical: 12 }}
             frame={{ maxWidth: Infinity }}
             background={T.accent}
-            clipShape={shape(12)}
+            clipShape={shape(16)}
             contentShape="rect"
             onTapGesture={() => load(keyword, order, page + 1)}
           >

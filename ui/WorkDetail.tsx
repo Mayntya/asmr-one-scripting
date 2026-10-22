@@ -178,7 +178,7 @@ export function WorkDetail({ work }: { work: Work }) {
             padding={{ horizontal: 20, vertical: 15 }}
             frame={{ maxWidth: Infinity }}
             background={T.accent}
-            clipShape={shape(16)}
+            clipShape={shape(26)}
             contentShape="rect"
             onTapGesture={() => {
               if (audio.length === 0) return
@@ -197,7 +197,7 @@ export function WorkDetail({ work }: { work: Work }) {
             contentShape="circle"
             onTapGesture={() => setFav(library.toggleFavorite(work))}
           >
-            <Rectangle fill={T.rowBgHi} frame={{ width: 52, height: 52 }} clipShape={shape(26)} />
+            <Rectangle fill={T.veil} frame={{ width: 52, height: 52 }} clipShape={shape(26)} />
             <Image
               systemName={fav ? "heart.fill" : "heart"}
               font="body"
@@ -210,7 +210,7 @@ export function WorkDetail({ work }: { work: Work }) {
             contentShape="circle"
             onTapGesture={() => Navigation.present({ element: <ShareCardSheet work={work} /> })}
           >
-            <Rectangle fill={T.rowBgHi} frame={{ width: 52, height: 52 }} clipShape={shape(26)} />
+            <Rectangle fill={T.veil} frame={{ width: 52, height: 52 }} clipShape={shape(26)} />
             <Image systemName="square.and.arrow.up" font="body" foregroundStyle={T.text} />
           </ZStack>
         </HStack>
@@ -221,7 +221,6 @@ export function WorkDetail({ work }: { work: Work }) {
           padding={16}
           glassEffect={glass(18)}
           background={T.glassBg}
-          border={{ style: T.rowBgHi, width: 0.6 }}
           clipShape={shape(18)}
           frame={{ maxWidth: Infinity }}
         >
@@ -297,7 +296,7 @@ export function WorkDetail({ work }: { work: Work }) {
           <HStack
             spacing={4}
             padding={{ horizontal: 9, vertical: 4 }}
-            background={T.cardHi}
+            background={T.veil}
             clipShape={shape(11)}
             contentShape="rect"
             onTapGesture={onChip}
@@ -356,7 +355,7 @@ export function WorkDetail({ work }: { work: Work }) {
               padding={{ horizontal: 12, vertical: 13 }}
               background={T.rowBg}
               border={{ style: T.border, width: 0.5 }}
-              clipShape={shape(12)}
+              clipShape={shape(16)}
               frame={{ maxWidth: Infinity }}
               contentShape="rect"
               onTapGesture={() => play(row.track)}

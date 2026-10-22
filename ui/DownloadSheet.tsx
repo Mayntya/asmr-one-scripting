@@ -76,7 +76,7 @@ export function DownloadSheet({ work, tracks }: { work: Work; tracks: TrackNode[
             contentShape="circle"
             onTapGesture={() => dismiss()}
           >
-            <Rectangle fill={T.rowBg} frame={{ width: 34, height: 34 }} clipShape={shape(17)} />
+            <Rectangle fill={T.veil} frame={{ width: 34, height: 34 }} clipShape={shape(17)} />
             <Image systemName="xmark" font="footnote" fontWeight="bold" foregroundStyle={T.text} />
           </ZStack>
           <Spacer />
@@ -87,7 +87,7 @@ export function DownloadSheet({ work, tracks }: { work: Work; tracks: TrackNode[
           <HStack
             spacing={0}
             padding={{ horizontal: 12, vertical: 7 }}
-            background={T.rowBg}
+            background={T.veil}
             clipShape={shape(14)}
             contentShape="rect"
             onTapGesture={() => setSel(allOn ? new Set() : new Set(groups.map((g) => g.id)))}
@@ -120,7 +120,7 @@ export function DownloadSheet({ work, tracks }: { work: Work; tracks: TrackNode[
                   padding={{ horizontal: 14, vertical: 13 }}
                   background={T.rowBg}
                   border={{ style: T.border, width: 0.5 }}
-                  clipShape={shape(12)}
+                  clipShape={shape(16)}
                   frame={{ maxWidth: Infinity }}
                   contentShape="rect"
                   onTapGesture={() => toggle(g.id)}
@@ -164,15 +164,15 @@ export function DownloadSheet({ work, tracks }: { work: Work; tracks: TrackNode[
 
         <HStack padding={{ horizontal: 16, bottom: 12, top: 6 }} frame={{ maxWidth: Infinity }}>
           <ZStack
-            frame={{ maxWidth: Infinity, height: 48 }}
-            mask={<Rectangle fill="#FFFFFF" clipShape={shape(14)} />}
+            frame={{ maxWidth: Infinity, height: 50 }}
+            mask={<Rectangle fill="#FFFFFF" clipShape={shape(25)} />}
             contentShape="rect"
             onTapGesture={chosenTracks.length > 0 ? start : undefined}
           >
             <Rectangle
               fill={chosenTracks.length > 0 ? T.accent : T.cardHi}
-              frame={{ maxWidth: Infinity, height: 48 }}
-              clipShape={shape(14)}
+              frame={{ maxWidth: Infinity, height: 50 }}
+              clipShape={shape(25)}
             />
             <HStack spacing={6}>
               <Image

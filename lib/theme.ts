@@ -20,6 +20,8 @@ export type Palette = {
   rowBgHi: Color
   border: Color
   glassBg: Color
+  /** 浮层/玻璃控件底：弹层、胶囊按钮、圆形返回键都用它。 */
+  veil: Color
   chrome: Color
 }
 
@@ -41,6 +43,7 @@ const DARK: Palette = {
   rowBgHi: "rgba(255, 255, 255, 0.13)",
   border: "rgba(255, 255, 255, 0.16)",
   glassBg: "rgba(255, 255, 255, 0.06)",
+  veil: "rgba(44, 36, 46, 0.74)",
   chrome: "rgba(22, 15, 20, 0.80)",
 }
 
@@ -62,6 +65,7 @@ const LIGHT: Palette = {
   rowBgHi: "rgba(0, 0, 0, 0.085)",
   border: "rgba(0, 0, 0, 0.14)",
   glassBg: "rgba(255, 255, 255, 0.74)",
+  veil: "rgba(255, 255, 255, 0.82)",
   chrome: "rgba(255, 255, 255, 0.88)",
 }
 

@@ -68,7 +68,7 @@ export function StatsPage() {
               padding={{ horizontal: 16, vertical: 16 }}
               frame={{ maxWidth: Infinity, alignment: "leading" }}
               background={T.card}
-              clipShape={shape(12)}
+              clipShape={shape(16)}
             >
               <Text font="footnote" foregroundStyle={T.faint}>
                 累计收听
@@ -86,7 +86,7 @@ export function StatsPage() {
               spacing={10}
               padding={16}
               background={T.card}
-              clipShape={shape(12)}
+              clipShape={shape(16)}
               frame={{ maxWidth: Infinity }}
             >
               <HStack spacing={6} frame={{ maxWidth: Infinity }}>

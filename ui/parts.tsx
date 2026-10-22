@@ -27,8 +27,11 @@ export function PageHeader({
         {back === true ? (
           <HStack
             frame={{ width: 36, height: 36 }}
-            contentShape="rect"
+            contentShape="circle"
             onTapGesture={() => dismiss()}
+            background={T.veil}
+            clipShape="circle"
+            shadow={LIFT}
           >
             <Image systemName="chevron.left" font="title3" fontWeight="semibold" foregroundStyle={T.text} />
           </HStack>
@@ -140,7 +143,7 @@ export function GroupLabel({ text }: { text: string }) {
 export function ListCard({ children }: { children: any }) {
   const T = usePalette()
   return (
-    <VStack spacing={0} background={T.card} clipShape={shape(12)} frame={{ maxWidth: Infinity }}>
+    <VStack spacing={0} background={T.card} clipShape={shape(16)} frame={{ maxWidth: Infinity }}>
       {children}
     </VStack>
   )
@@ -219,10 +222,13 @@ export function ListRow({
   )
 }
 
-const SHADE: Color = "rgba(0, 0, 0, 0.32)"
+const SHADE: Color = "rgba(0, 0, 0, 0.28)"
+/** 玻璃控件的投影，弹层和胶囊共用。 */
+export const LIFT = { color: "rgba(0, 0, 0, 0.38)" as Color, radius: 26, y: 9 }
 
 /** 自绘确认弹层。系统 confirmationDialog 在这个 App 里会把导航栈顶掉，
- *  还会被渲染到屏幕最底部，所以自己画。父视图必须是 ZStack。 */
+ *  还会被渲染到屏幕最底部，所以自己画。父视图必须是 ZStack。
+ *  造型跟 iOS 26 对齐：一块玻璃卡片 + 两个独立胶囊玻璃按钮。 */
 export function ConfirmLayer({
   title,
   message,
@@ -239,15 +245,21 @@ export function ConfirmLayer({
   onCancel: () => void
 }) {
   const T = usePalette()
-  const row = (label: string, color: Color, fn: () => void) => (
-    <VStack spacing={0} frame={{ maxWidth: Infinity }}>
-      <Rectangle fill={T.border} frame={{ maxWidth: Infinity, height: 0.5 }} />
-      <HStack frame={{ maxWidth: Infinity, minHeight: 46 }} contentShape="rect" onTapGesture={fn}>
-        <Text font="body" fontWeight="semibold" foregroundStyle={color}>
-          {label}
-        </Text>
-      </HStack>
-    </VStack>
+  const veil: Color = T.veil
+  const lift = LIFT
+  const pill = (label: string, color: Color, fn: () => void) => (
+    <HStack
+      frame={{ maxWidth: Infinity, minHeight: 50 }}
+      contentShape="rect"
+      onTapGesture={fn}
+      background={veil}
+      clipShape={shape(25)}
+      shadow={lift}
+    >
+      <Text font="body" fontWeight="semibold" foregroundStyle={color}>
+        {label}
+      </Text>
+    </HStack>
   )
   return (
     <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }}>
@@ -257,35 +269,30 @@ export function ConfirmLayer({
         frame={{ maxWidth: Infinity, maxHeight: Infinity }}
         onTapGesture={onCancel}
       />
-      <VStack spacing={0} padding={{ horizontal: 26 }} frame={{ maxWidth: 300 }}>
-        <VStack spacing={0} background={T.card} clipShape={shape(16)} frame={{ maxWidth: Infinity }}>
-          <VStack
-            alignment="leading"
-            spacing={6}
-            padding={{ horizontal: 18, vertical: 18 }}
-            frame={{ maxWidth: Infinity, alignment: "leading" }}
+      <VStack spacing={10} frame={{ maxWidth: 296 }}>
+        <VStack
+          alignment="leading"
+          spacing={7}
+          padding={{ horizontal: 22, vertical: 20 }}
+          frame={{ maxWidth: Infinity }}
+          background={veil}
+          clipShape={shape(28)}
+          shadow={lift}
+        >
+          <Text
+            font="headline"
+            fontWeight="semibold"
+            foregroundStyle={T.text}
+            multilineTextAlignment="leading"
           >
-            <Text
-              font="subheadline"
-              fontWeight="semibold"
-              foregroundStyle={T.text}
-              multilineTextAlignment="leading"
-              frame={{ maxWidth: Infinity, alignment: "leading" }}
-            >
-              {title}
-            </Text>
-            <Text
-              font="footnote"
-              foregroundStyle={T.faint}
-              multilineTextAlignment="leading"
-              frame={{ maxWidth: Infinity, alignment: "leading" }}
-            >
-              {message}
-            </Text>
-          </VStack>
-          {row(action, danger ? T.accent : T.accentText, onAction)}
-          {row("取消", T.subText, onCancel)}
+            {title}
+          </Text>
+          <Text font="subheadline" foregroundStyle={T.subText} multilineTextAlignment="leading">
+            {message}
+          </Text>
         </VStack>
+        {pill(action, danger ? T.accent : T.accentText, onAction)}
+        {pill("取消", T.text, onCancel)}
       </VStack>
     </ZStack>
   )

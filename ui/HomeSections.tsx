@@ -22,7 +22,7 @@ export function LaneCard({ work, width = LANE_W }: { work: Work; width?: number 
           scaleToFill
           aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
           frame={{ width, height: h }}
-          clipShape={shape(12)}
+          clipShape={shape(16)}
           placeholder={<Rectangle fill={T.rowBgHi} frame={{ width, height: h }} />}
         />
         <Text

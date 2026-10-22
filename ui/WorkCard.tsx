@@ -23,7 +23,7 @@ export function WorkCard({ work }: { work: Work }) {
             scaleToFill
             aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
             frame={{ width: 76, height: 57 }}
-            clipShape={shape(12)}
+            clipShape={shape(16)}
             placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: 76, height: 57 }} />}
           />
           <VStack alignment="leading" spacing={4} frame={{ maxWidth: Infinity }}>

@@ -18,7 +18,7 @@ export function PosterCard({ work }: { work: Work }) {
           scaleToFill
           aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
           frame={{ width: W, height: H }}
-          clipShape={shape(12)}
+          clipShape={shape(16)}
           placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: W, height: H }} />}
         />
         <Text

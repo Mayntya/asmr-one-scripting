@@ -177,7 +177,7 @@ function LikedList({ kind, items, emptyText }: { kind: LikeKind; items: LikedIte
               spacing={11}
               padding={{ horizontal: 12, vertical: 11 }}
               background={T.card}
-              clipShape={shape(12)}
+              clipShape={shape(16)}
               frame={{ maxWidth: Infinity }}
             >
               <ZStack frame={{ width: 30, height: 30 }} background={c.bg} clipShape={shape(8)}>
