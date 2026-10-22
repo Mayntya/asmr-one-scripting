@@ -17,7 +17,6 @@ import { fmtHM, totals } from "../lib/stats"
 import { usePalette } from "../lib/theme"
 import { GroupLabel, ListCard, ListRow, PageHeader } from "./parts"
 import { StatsPage } from "./StatsPage"
-import { RadarPage } from "./RadarPage"
 import { StoragePage } from "./StoragePage"
 import { LoginPage } from "./LoginPage"
 
@@ -85,18 +84,7 @@ export function ProfilePage({ onClose }: { onClose: () => void }) {
                 <ListRow
                   icon="waveform"
                   title="收听"
-                  detail="时长、时段、最常播放的单集"
-                  chevron
-                />
-              }
-            />
-            <Link
-              to={<RadarPage />}
-              row={
-                <ListRow
-                  icon="slider.horizontal.3"
-                  title="口味"
-                  detail="常听的社团和标签"
+                  detail="时长、时段、最常听的社团与标签"
                   chevron
                   last
                 />
