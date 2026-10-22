@@ -1,4 +1,4 @@
-import { Button, Group, Rectangle, ScrollView, Text, VStack, useEffect, useState } from "scripting"
+import { Group, Rectangle, ScrollView, Text, VStack, ZStack, useEffect, useState } from "scripting"
 import { library } from "../lib/store"
 import { fmtHM, totals } from "../lib/stats"
 import { shape, usePalette } from "../lib/theme"
@@ -13,7 +13,7 @@ import {
   subscribeOffline,
 } from "../lib/downloads"
 import type { OfflineWork, WorkProgress } from "../lib/downloads"
-import { GroupLabel, ListCard, ListRow, PageHeader } from "./parts"
+import { ConfirmLayer, GroupLabel, ListCard, ListRow, PageHeader } from "./parts"
 
 function dayOf(at: number | undefined): string | null {
   if (at == null || at <= 0) return null
@@ -63,33 +63,10 @@ export function StoragePage() {
   const lastSeen = dayOf(lastAt)
 
   return (
+    <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }}>
     <ScrollView
       navigationBarVisibility="hidden"
       background={<Rectangle fill={T.bg} ignoresSafeArea />}
-      confirmationDialog={{
-        title: dialogTitle,
-        message: <Text>{dialogMessage}</Text>,
-        isPresented: ask != null,
-        onChanged: (v: boolean) => {
-          if (!v) setAsk(null)
-        },
-        actions: (
-          <Group>
-            <Button
-              title={ask === "history" || ask === "stats" ? "清除" : "删除"}
-              role="destructive"
-              action={() => {
-                if (ask === "history") library.clearHistory()
-                else if (ask === "stats") library.clearStats()
-                else if (ask === "all") removeAllOffline()
-                else if (ask != null) removeOffline(Number(ask.slice(5)))
-                setAsk(null)
-              }}
-            />
-            <Button title="取消" role="cancel" action={() => setAsk(null)} />
-          </Group>
-        ),
-      }}
     >
       <VStack
         spacing={10}
@@ -225,5 +202,22 @@ export function StoragePage() {
         </Text>
       </VStack>
     </ScrollView>
+
+      {ask != null ? (
+        <ConfirmLayer
+          title={dialogTitle}
+          message={dialogMessage}
+          action={ask === "history" || ask === "stats" ? "清除" : "删除"}
+          onAction={() => {
+            if (ask === "history") library.clearHistory()
+            else if (ask === "stats") library.clearStats()
+            else if (ask === "all") removeAllOffline()
+            else removeOffline(Number(ask.slice(5)))
+            setAsk(null)
+          }}
+          onCancel={() => setAsk(null)}
+        />
+      ) : null}
+    </ZStack>
   )
 }

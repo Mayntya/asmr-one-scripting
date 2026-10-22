@@ -1,5 +1,5 @@
 import { HStack, Image, Navigation, Rectangle, Spacer, Text, VStack, ZStack } from "scripting"
-import type { VirtualNode } from "scripting"
+import type { Color, VirtualNode } from "scripting"
 import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
 
 export function PageHeader({
@@ -216,5 +216,77 @@ export function ListRow({
         />
       )}
     </VStack>
+  )
+}
+
+const SHADE: Color = "rgba(0, 0, 0, 0.32)"
+
+/** 自绘确认弹层。系统 confirmationDialog 在这个 App 里会把导航栈顶掉，
+ *  还会被渲染到屏幕最底部，所以自己画。父视图必须是 ZStack。 */
+export function ConfirmLayer({
+  title,
+  message,
+  action = "删除",
+  danger = true,
+  onAction,
+  onCancel,
+}: {
+  title: string
+  message: string
+  action?: string
+  danger?: boolean
+  onAction: () => void
+  onCancel: () => void
+}) {
+  const T = usePalette()
+  const row = (label: string, color: Color, fn: () => void) => (
+    <VStack spacing={0} frame={{ maxWidth: Infinity }}>
+      <Rectangle fill={T.border} frame={{ maxWidth: Infinity, height: 0.5 }} />
+      <HStack frame={{ maxWidth: Infinity, minHeight: 46 }} contentShape="rect" onTapGesture={fn}>
+        <Text font="body" fontWeight="semibold" foregroundStyle={color}>
+          {label}
+        </Text>
+      </HStack>
+    </VStack>
+  )
+  return (
+    <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }}>
+      <Rectangle
+        fill={SHADE}
+        ignoresSafeArea
+        frame={{ maxWidth: Infinity, maxHeight: Infinity }}
+        onTapGesture={onCancel}
+      />
+      <VStack spacing={0} padding={{ horizontal: 26 }} frame={{ maxWidth: 300 }}>
+        <VStack spacing={0} background={T.card} clipShape={shape(16)} frame={{ maxWidth: Infinity }}>
+          <VStack
+            alignment="leading"
+            spacing={6}
+            padding={{ horizontal: 18, vertical: 18 }}
+            frame={{ maxWidth: Infinity, alignment: "leading" }}
+          >
+            <Text
+              font="subheadline"
+              fontWeight="semibold"
+              foregroundStyle={T.text}
+              multilineTextAlignment="leading"
+              frame={{ maxWidth: Infinity, alignment: "leading" }}
+            >
+              {title}
+            </Text>
+            <Text
+              font="footnote"
+              foregroundStyle={T.faint}
+              multilineTextAlignment="leading"
+              frame={{ maxWidth: Infinity, alignment: "leading" }}
+            >
+              {message}
+            </Text>
+          </VStack>
+          {row(action, danger ? T.accent : T.accentText, onAction)}
+          {row("取消", T.subText, onCancel)}
+        </VStack>
+      </VStack>
+    </ZStack>
   )
 }

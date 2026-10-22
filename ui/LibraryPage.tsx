@@ -25,7 +25,7 @@ import { WorkCard } from "./WorkCard"
 import { WorkDetail } from "./WorkDetail"
 import { PlayerPage } from "./PlayerView"
 import { TagPage } from "./TagPage"
-import { PageHeader } from "./parts"
+import { ConfirmLayer, PageHeader } from "./parts"
 
 function useLibraryVersion() {
   const [v, setV] = useState(0)
@@ -237,27 +237,10 @@ export function HistoryPage({ onClose }: { onClose: () => void }) {
   const groups = groupByDay(items)
 
   return (
+    <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }}>
     <ScrollView
       navigationBarVisibility="hidden"
       background={<Rectangle fill={T.bg} ignoresSafeArea />}
-      confirmationDialog={{
-        title: "清除最近播放？",
-        isPresented: clearAsk,
-        onChanged: (v: boolean) => setClearAsk(v),
-        actions: (
-          <Group>
-            <Button
-              title="清除"
-              role="destructive"
-              action={() => {
-                library.clearHistory()
-                setClearAsk(false)
-              }}
-            />
-            <Button title="取消" role="cancel" action={() => setClearAsk(false)} />
-          </Group>
-        ),
-      }}
     >
       <VStack spacing={14} padding={{ horizontal: 16, top: 8, bottom: 150 }} frame={{ maxWidth: Infinity }}>
         <PageHeader
@@ -386,5 +369,19 @@ export function HistoryPage({ onClose }: { onClose: () => void }) {
         )}
       </VStack>
     </ScrollView>
+
+      {clearAsk ? (
+        <ConfirmLayer
+          title="清除最近播放？"
+          message="列表会清空，收藏和收听记录不受影响。"
+          action="清除"
+          onAction={() => {
+            library.clearHistory()
+            setClearAsk(false)
+          }}
+          onCancel={() => setClearAsk(false)}
+        />
+      ) : null}
+    </ZStack>
   )
 }

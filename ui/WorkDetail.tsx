@@ -1,6 +1,4 @@
 import {
-  Button,
-  Group,
   HStack,
   Image,
   Navigation,
@@ -26,6 +24,8 @@ import { TagLink } from "./TagChip"
 import { PlayerPage } from "./PlayerView"
 import { ShareCardSheet } from "./ShareCardSheet"
 import { DownloadSheet } from "./DownloadSheet"
+import { TrackBadge } from "./TrackBadge"
+import { ConfirmLayer } from "./parts"
 
 type Row =
   | { kind: "folder"; title: string; count: number }
@@ -113,15 +113,11 @@ export function WorkDetail({ work }: { work: Work }) {
     enqueueTrack(work, t)
   }
 
-  const trackIcon = (key: string) => {
+  /** 轨道右侧的下载状态徽章。 */
+  const trackBadge = (key: string) => {
     const t = taskOf(work.id, key)
-    if (t != null) return t.state === "running" ? "arrow.down.circle.fill" : "clock"
-    return isTrackOffline(work.id, key) ? "checkmark.circle.fill" : "arrow.down.circle"
-  }
-
-  const trackTone = (key: string) => {
-    if (taskOf(work.id, key) != null) return T.accentText
-    return isTrackOffline(work.id, key) ? T.accent : T.faint
+    if (t != null) return <TrackBadge state={t.state === "running" ? "running" : "queued"} ratio={t.ratio} />
+    return <TrackBadge state={isTrackOffline(work.id, key) ? "done" : "idle"} />
   }
 
   const busy = prog != null
@@ -146,35 +142,11 @@ export function WorkDetail({ work }: { work: Work }) {
   }
 
   return (
+    <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }}>
     <ScrollView
       navigationTitle=""
       navigationBarTitleDisplayMode="inline"
       background={<Rectangle fill={T.bg} ignoresSafeArea />}
-      confirmationDialog={{
-        title: "停止下载？",
-        message: (
-          <Text>
-            {`已经下完的 ${prog?.done ?? 0} 轨会留在本机，排队中的取消掉。`}
-          </Text>
-        ),
-        isPresented: ask != null,
-        onChanged: (v: boolean) => {
-          if (!v) setAsk(null)
-        },
-        actions: (
-          <Group>
-            <Button
-              title="停止"
-              role="destructive"
-              action={() => {
-                cancelWork(work.id)
-                setAsk(null)
-              }}
-            />
-            <Button title="取消" role="cancel" action={() => setAsk(null)} />
-          </Group>
-        ),
-      }}
     >
       <VStack spacing={20} padding={{ horizontal: 16, top: 10, bottom: 160 }} frame={{ maxWidth: Infinity }}>
         <Image
@@ -412,20 +384,30 @@ export function WorkDetail({ work }: { work: Work }) {
               </Text>
               <HStack
                 spacing={0}
-                frame={{ width: 30, height: 30 }}
+                frame={{ width: 34, height: 34 }}
                 contentShape="rect"
                 onTapGesture={() => onTrackChip(row.track)}
               >
-                <Image
-                  systemName={trackIcon(row.track.key)}
-                  font="footnote"
-                  foregroundStyle={trackTone(row.track.key)}
-                />
+                {trackBadge(row.track.key)}
               </HStack>
             </HStack>
           )
         )}
       </VStack>
     </ScrollView>
+
+      {ask != null ? (
+        <ConfirmLayer
+          title="停止下载？"
+          message={`已经下完的 ${prog?.done ?? 0} 轨会留在本机，排队中的取消掉。`}
+          action="停止"
+          onAction={() => {
+            cancelWork(work.id)
+            setAsk(null)
+          }}
+          onCancel={() => setAsk(null)}
+        />
+      ) : null}
+    </ZStack>
   )
 }
