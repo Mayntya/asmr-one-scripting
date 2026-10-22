@@ -1,5 +1,6 @@
-import { Device, HStack, Image, NavigationLink, Rectangle, Spacer, Text, VStack, ZStack } from "scripting"
+import { Device, HStack, Image, NavigationLink, Rectangle, ScrollView, Spacer, Text, VStack, ZStack, useEffect, useState } from "scripting"
 import { searchWorks, type Work } from "../lib/api"
+import { loadMesh, meshFor, type Mesh } from "../lib/artwork"
 import { circleTone, cvTone, tagTone, toneColors } from "../lib/palette"
 import { shape, usePalette } from "../lib/theme"
 import { TagPage } from "./TagPage"
@@ -114,7 +115,7 @@ function rememberTheme(title: string) {
   } catch {}
 }
 
-/** 洗牌整个主题池，逐个试到能凑出三张卡为止。 */
+/** 洗牌整个主题池，逐个试到能凑出一张主图加五张推荐为止。 */
 export async function pickTheme(): Promise<{ theme: ThemeDef; works: Work[] } | null> {
   const recent = readRecentThemes()
   const fresh = THEMES.filter((t) => !recent.includes(t.title))
@@ -127,8 +128,8 @@ export async function pickTheme(): Promise<{ theme: ThemeDef; works: Work[] } | 
   }
   for (const t of a.slice(0, 4)) {
     try {
-      const r = await searchWorks(t.query, 1, "dl_count", 4)
-      if (r.works.length >= 3) {
+      const r = await searchWorks(t.query, 1, "dl_count", 6)
+      if (r.works.length >= 6) {
         rememberTheme(t.title)
         return { theme: t, works: r.works }
       }
@@ -143,87 +144,114 @@ export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }
   const T = usePalette()
   const inner = Math.min(Device.screen.width, 560) - 32
   const pad = 10
-  const contentW = inner - pad * 2
-  const cardW = Math.floor((contentW - 16) / 3)
+  const railW = inner - pad * 2
+  const cardW = Math.floor(railW * 0.38)
   const cardH = Math.round((cardW * 3) / 4)
   const hero = works[0]
   const heroUrl = hero == null ? "" : hero.cover || hero.thumb
+  const [mesh, setMesh] = useState<Mesh>(() => meshFor(heroUrl))
+
+  useEffect(() => {
+    let alive = true
+    setMesh(meshFor(heroUrl))
+    loadMesh(heroUrl).then((m) => {
+      if (alive) setMesh(m)
+    })
+    return () => {
+      alive = false
+    }
+  }, [heroUrl])
 
   return (
-    <VStack spacing={10} padding={pad} frame={{ width: inner }} background={T.card} clipShape={shape(22)}>
-      <NavigationLink destination={<TagPage kind="tag" value={theme.sub} />} buttonStyle="plain">
-        <VStack
-          frame={{ width: contentW, height: BANNER_H }}
-          clipShape={shape(15)}
-          mask={<Rectangle fill="#FFFFFF" clipShape={shape(15)} />}
-          spacing={0}
-        >
-          <ZStack frame={{ width: contentW, height: BANNER_H }} alignment="bottomLeading">
-            {heroUrl.length > 0 ? (
-              <Image
-                imageUrl={heroUrl}
-                resizable
-                scaleToFill
-                aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
-                frame={{ width: contentW, height: BANNER_H }}
-                clipShape={shape(15)}
-                placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: contentW, height: BANNER_H }} />}
-              />
-            ) : (
-              <Rectangle fill={T.rowBgHi} frame={{ width: contentW, height: BANNER_H }} />
-            )}
-            <Rectangle
-              clipShape={shape(15)}
-              fill={{
-                colors: ["rgba(0,0,0,0.10)", "rgba(0,0,0,0.52)", "rgba(0,0,0,0.94)"],
-                startPoint: "top",
-                endPoint: "bottom",
-              }}
-            />
-            <VStack
-              alignment="leading"
-              spacing={3}
-              padding={{ horizontal: 16, bottom: 15 }}
-              frame={{ width: contentW, alignment: "leading" }}
-            >
-              <Text font="caption2" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.85)">
-                {`主题 · ${theme.sub}`}
-              </Text>
-              <Text font="title2" fontWeight="bold" foregroundStyle="#FFFFFF">
-                {`${theme.title}精选`}
-              </Text>
-            </VStack>
-          </ZStack>
-        </VStack>
-      </NavigationLink>
+    <ZStack frame={{ width: inner }} clipShape={shape(22)} background={T.card} alignment="top">
+      <Rectangle
+        fill={{
+          colors: [mesh[0] as `#${string}`, mesh[1] as `#${string}`],
+          startPoint: "top",
+          endPoint: "bottom",
+        }}
+        frame={{ maxWidth: Infinity, maxHeight: Infinity }}
+      />
 
-      <HStack spacing={8} frame={{ maxWidth: Infinity }} alignment="top">
-        {works.slice(1, 4).map((w) => (
-          <NavigationLink key={w.id} destination={<WorkDetail work={w} />} buttonStyle="plain">
-            <VStack alignment="leading" spacing={5} frame={{ width: cardW }}>
-              <Image
-                imageUrl={w.cover || w.thumb}
-                resizable
-                scaleToFill
-                aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
-                frame={{ width: cardW, height: cardH }}
-                clipShape={shape(10)}
-                placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: cardW, height: cardH }} />}
+      <VStack spacing={0} frame={{ width: inner, alignment: "top" }}>
+        <NavigationLink destination={<TagPage kind="tag" value={theme.sub} />} buttonStyle="plain">
+          <VStack
+            frame={{ width: inner, height: BANNER_H }}
+            clipShape={shape(22)}
+            mask={<Rectangle fill="#FFFFFF" clipShape={shape(22)} />}
+            spacing={0}
+          >
+            <ZStack frame={{ width: inner, height: BANNER_H }} alignment="bottomLeading">
+              {heroUrl.length > 0 ? (
+                <Image
+                  imageUrl={heroUrl}
+                  resizable
+                  scaleToFill
+                  aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
+                  frame={{ width: inner, height: BANNER_H }}
+                  clipShape={shape(22)}
+                  placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: inner, height: BANNER_H }} />}
+                />
+              ) : (
+                <Rectangle fill={T.rowBgHi} frame={{ width: inner, height: BANNER_H }} />
+              )}
+              <Rectangle
+                clipShape={shape(22)}
+                fill={{
+                  colors: ["rgba(0,0,0,0.10)", "rgba(0,0,0,0.52)", "rgba(0,0,0,0.94)"],
+                  startPoint: "top",
+                  endPoint: "bottom",
+                }}
               />
-              <Text
-                font="caption2"
-                foregroundStyle={T.sub}
-                lineLimit={1}
-                multilineTextAlignment="leading"
-                frame={{ width: cardW, alignment: "leading" }}
+              <VStack
+                alignment="leading"
+                spacing={3}
+                padding={{ horizontal: 16, bottom: 15 }}
+                frame={{ width: inner, alignment: "leading" }}
               >
-                {w.vas[0] ?? w.circle}
-              </Text>
-            </VStack>
-          </NavigationLink>
-        ))}
-      </HStack>
-    </VStack>
+                <Text font="caption2" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.85)">
+                  {`主题 · ${theme.sub}`}
+                </Text>
+                <Text font="title2" fontWeight="bold" foregroundStyle="#FFFFFF">
+                  {`${theme.title}精选`}
+                </Text>
+              </VStack>
+            </ZStack>
+          </VStack>
+        </NavigationLink>
+
+        <VStack spacing={0} padding={{ horizontal: pad, top: pad, bottom: pad }} frame={{ width: inner, alignment: "leading" }}>
+          <ScrollView axes="horizontal" frame={{ height: cardH + 26 }}>
+            <HStack spacing={8} frame={{ alignment: "leading" }}>
+              {works.slice(1, 6).map((w) => (
+                <NavigationLink key={w.id} destination={<WorkDetail work={w} />} buttonStyle="plain">
+                  <VStack alignment="leading" spacing={5} frame={{ width: cardW }}>
+                    <Image
+                      imageUrl={w.cover || w.thumb}
+                      resizable
+                      scaleToFill
+                      aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
+                      frame={{ width: cardW, height: cardH }}
+                      clipShape={shape(10)}
+                      placeholder={<Rectangle fill="rgba(0,0,0,0.28)" frame={{ width: cardW, height: cardH }} />}
+                    />
+                    <Text
+                      font="caption2"
+                      foregroundStyle="rgba(255,255,255,0.9)"
+                      lineLimit={1}
+                      multilineTextAlignment="leading"
+                      frame={{ width: cardW, alignment: "leading" }}
+                    >
+                      {w.vas[0] ?? w.circle}
+                    </Text>
+                  </VStack>
+                </NavigationLink>
+              ))}
+            </HStack>
+          </ScrollView>
+        </VStack>
+      </VStack>
+    </ZStack>
   )
 }
 
