@@ -2,6 +2,7 @@ import {
   HStack,
   Image,
   Navigation,
+  NavigationLink,
   ProgressView,
   Rectangle,
   ScrollView,
@@ -19,8 +20,9 @@ import { player } from "../lib/player"
 import { cancelTrack, cancelWork, enqueueTrack, fmtBytes, isTrackOffline, lastDownloadError, offlineNodes, offlineOf, removeOffline, removeTrack, subscribeOffline, taskOf, workProgress } from "../lib/downloads"
 import type { OfflineWork, WorkProgress } from "../lib/downloads"
 import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
-import { cvTone, tagTone } from "../lib/palette"
+import { tagTone } from "../lib/palette"
 import { TagLink } from "./TagChip"
+import { TagPage } from "./TagPage"
 import { PlayerPage } from "./PlayerView"
 import { ShareCardSheet } from "./ShareCardSheet"
 import { DownloadSheet } from "./DownloadSheet"
@@ -251,22 +253,28 @@ export function WorkDetail({ work }: { work: Work }) {
           </HStack>
 
           {work.vas.length > 0 ? (
-            <VStack alignment="leading" spacing={6} frame={{ maxWidth: Infinity }}>
-              <Text font="caption2" foregroundStyle={T.faint}>
+            <HStack spacing={10} frame={{ maxWidth: Infinity }}>
+              <Text font="caption" fontWeight="bold" foregroundStyle={T.accent}>
                 CV
               </Text>
-              <HStack spacing={6}>
-                {work.vas.slice(0, 3).map((v) => (
-                  <TagLink key={v} text={v} tone={cvTone(v)} kind="cv" />
-                ))}
-                {work.vas.length > 3 ? (
-                  <Text font="caption2" foregroundStyle={T.faint}>
-                    {`+${work.vas.length - 3}`}
+              {work.vas.slice(0, 3).map((v) => (
+                <NavigationLink key={v} destination={<TagPage kind="cv" value={v} />} buttonStyle="plain">
+                  <Text font="subheadline" fontWeight="semibold" foregroundStyle={T.text} lineLimit={1}>
+                    {v}
                   </Text>
-                ) : null}
-                <Spacer />
-              </HStack>
-            </VStack>
+                </NavigationLink>
+              ))}
+              {work.vas.length > 3 ? (
+                <Text font="caption2" foregroundStyle={T.faint}>
+                  {`+${work.vas.length - 3}`}
+                </Text>
+              ) : null}
+              <Spacer />
+            </HStack>
+          ) : null}
+
+          {work.vas.length > 0 && work.tags.length > 0 ? (
+            <Rectangle fill={T.border} frame={{ maxWidth: Infinity, height: 0.5 }} />
           ) : null}
 
           {work.tags.length > 0 ? (
