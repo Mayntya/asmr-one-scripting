@@ -1,4 +1,5 @@
 import {
+  Circle,
   HStack,
   Image,
   Navigation,
@@ -119,19 +120,20 @@ export function DownloadSheet({ work, tracks }: { work: Work; tracks: TrackNode[
                   spacing={12}
                   padding={{ horizontal: 14, vertical: 13 }}
                   background={T.rowBg}
-                  border={{ style: T.border, width: 0.5 }}
                   clipShape={shape(16)}
                   frame={{ maxWidth: Infinity }}
                   contentShape="rect"
                   onTapGesture={() => toggle(g.id)}
                 >
-                  <ZStack frame={{ width: 22, height: 22 }} mask={<Rectangle fill="#FFFFFF" clipShape={shape(11)} />}>
-                    <Rectangle
-                      fill={on ? T.accent : T.bg}
-                      frame={{ width: 22, height: 22 }}
-                      clipShape={shape(11)}
-                      border={{ style: T.sub, width: 1 }}
-                    />
+                  <ZStack frame={{ width: 22, height: 22 }}>
+                    {on ? (
+                      <Rectangle fill={T.accent} frame={{ width: 22, height: 22 }} clipShape={shape(11)} />
+                    ) : (
+                      <Circle
+                        stroke={{ shapeStyle: T.sub, strokeStyle: { lineWidth: 1.5 } }}
+                        frame={{ width: 22, height: 22 }}
+                      />
+                    )}
                     {on ? (
                       <Image systemName="checkmark" font="caption2" fontWeight="bold" foregroundStyle={T.onAccent} />
                     ) : null}

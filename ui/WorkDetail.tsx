@@ -354,7 +354,6 @@ export function WorkDetail({ work }: { work: Work }) {
               spacing={12}
               padding={{ horizontal: 12, vertical: 13 }}
               background={T.rowBg}
-              border={{ style: T.border, width: 0.5 }}
               clipShape={shape(16)}
               frame={{ maxWidth: Infinity }}
               contentShape="rect"
