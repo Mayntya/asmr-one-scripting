@@ -142,36 +142,38 @@ const BANNER_H = 178
 export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }) {
   const T = usePalette()
   const inner = Math.min(Device.screen.width, 560) - 32
-  const cardW = Math.floor((inner - 16) / 3)
+  const pad = 10
+  const contentW = inner - pad * 2
+  const cardW = Math.floor((contentW - 16) / 3)
   const cardH = Math.round((cardW * 3) / 4)
   const hero = works[0]
   const heroUrl = hero == null ? "" : hero.cover || hero.thumb
 
   return (
-    <VStack spacing={11} frame={{ maxWidth: Infinity }}>
+    <VStack spacing={10} padding={pad} frame={{ width: inner }} background={T.card} clipShape={shape(22)}>
       <NavigationLink destination={<TagPage kind="tag" value={theme.sub} />} buttonStyle="plain">
         <VStack
-          frame={{ width: inner, height: BANNER_H }}
-          clipShape={shape(18)}
-          mask={<Rectangle fill="#FFFFFF" clipShape={shape(18)} />}
+          frame={{ width: contentW, height: BANNER_H }}
+          clipShape={shape(15)}
+          mask={<Rectangle fill="#FFFFFF" clipShape={shape(15)} />}
           spacing={0}
         >
-          <ZStack frame={{ width: inner, height: BANNER_H }} alignment="bottomLeading">
+          <ZStack frame={{ width: contentW, height: BANNER_H }} alignment="bottomLeading">
             {heroUrl.length > 0 ? (
               <Image
                 imageUrl={heroUrl}
                 resizable
                 scaleToFill
                 aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
-                frame={{ width: inner, height: BANNER_H }}
-                clipShape={shape(18)}
-                placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: inner, height: BANNER_H }} />}
+                frame={{ width: contentW, height: BANNER_H }}
+                clipShape={shape(15)}
+                placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: contentW, height: BANNER_H }} />}
               />
             ) : (
-              <Rectangle fill={T.rowBgHi} frame={{ width: inner, height: BANNER_H }} />
+              <Rectangle fill={T.rowBgHi} frame={{ width: contentW, height: BANNER_H }} />
             )}
             <Rectangle
-              clipShape={shape(18)}
+              clipShape={shape(15)}
               fill={{
                 colors: ["rgba(0,0,0,0.10)", "rgba(0,0,0,0.52)", "rgba(0,0,0,0.94)"],
                 startPoint: "top",
@@ -182,7 +184,7 @@ export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }
               alignment="leading"
               spacing={3}
               padding={{ horizontal: 16, bottom: 15 }}
-              frame={{ width: inner, alignment: "leading" }}
+              frame={{ width: contentW, alignment: "leading" }}
             >
               <Text font="caption2" fontWeight="semibold" foregroundStyle="rgba(255,255,255,0.85)">
                 {`主题 · ${theme.sub}`}
