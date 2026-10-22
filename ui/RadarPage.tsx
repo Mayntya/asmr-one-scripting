@@ -1,8 +1,8 @@
-import { HStack, Image, LazyVGrid, NavigationLink, Rectangle, ScrollView, Spacer, Text, VStack } from "scripting"
+import { GeometryReader, HStack, Image, LazyVGrid, NavigationLink, Rectangle, ScrollView, Spacer, Text, VStack } from "scripting"
 import { circleTone, tagTone, toneColors } from "../lib/palette"
 import { NIGHT_HOURS, fmtHM, hourLabel, topCircles, topTags, totals } from "../lib/stats"
 import { shape, usePalette } from "../lib/theme"
-import { EmptyState, GroupLabel, ListCard, PageHeader, Stat } from "./parts"
+import { EmptyState, GroupLabel, ListCard, PageHeader } from "./parts"
 import { TagPage } from "./TagPage"
 
 const BAR_H = 74
@@ -29,12 +29,35 @@ function HourBars({ hours }: { hours: number[] }) {
   )
 }
 
+/** 一条按实际宽度算的比例条。外层宽度由 GeometryReader 量，不靠猜。 */
+function RatioBar({ ratio, color }: { ratio: number; color: any }) {
+  const T = usePalette()
+  const w = Math.max(0, Math.min(1, ratio))
+  return (
+    <VStack spacing={0} frame={{ maxWidth: Infinity, height: 4 }}>
+      <GeometryReader>
+        {(p) => (
+          <HStack
+            spacing={0}
+            frame={{ width: p.size.width, height: 4, alignment: "leading" }}
+            background={T.rowBgHi}
+            clipShape="capsule"
+          >
+            <Rectangle fill={color} frame={{ width: Math.max(4, p.size.width * w), height: 4 }} />
+          </HStack>
+        )}
+      </GeometryReader>
+    </VStack>
+  )
+}
+
 export function RadarPage() {
   const T = usePalette()
   const dark = T.scheme === "dark"
   const t = totals()
   const circles = topCircles(10)
   const tags = topTags(20)
+  const maxCircle = Math.max(1, circles.length > 0 ? circles[0].seconds : 1)
 
   return (
     <ScrollView navigationBarVisibility="hidden" background={<Rectangle fill={T.bg} ignoresSafeArea />}>
@@ -48,9 +71,16 @@ export function RadarPage() {
             <ListCard>
               <VStack spacing={14} padding={16} frame={{ maxWidth: Infinity }}>
                 <HStack spacing={12} frame={{ maxWidth: Infinity }} alignment="center">
-                  <Stat value={fmtHM(t.seconds)} label="累计收听" />
-                  <VStack alignment="trailing" spacing={1} frame={{ maxWidth: Infinity }}>
+                  <VStack alignment="leading" spacing={1} frame={{ maxWidth: Infinity }}>
                     <Text font="title" fontWeight="bold" foregroundStyle={T.accentText}>
+                      {`${hourLabel(t.peakHour)}:00`}
+                    </Text>
+                    <Text font="caption2" foregroundStyle={T.faint}>
+                      最常打开的时刻
+                    </Text>
+                  </VStack>
+                  <VStack alignment="trailing" spacing={1} frame={{ maxWidth: Infinity }}>
+                    <Text font="title" fontWeight="bold" foregroundStyle={T.text}>
                       {`${Math.round(t.nightRatio * 100)}%`}
                     </Text>
                     <Text font="caption2" foregroundStyle={T.faint}>
@@ -82,15 +112,6 @@ export function RadarPage() {
                     {"23"}
                   </Text>
                 </HStack>
-
-                <Text
-                  font="caption2"
-                  foregroundStyle={T.faint}
-                  multilineTextAlignment="leading"
-                  frame={{ maxWidth: Infinity, alignment: "leading" }}
-                >
-                  {`最常在 ${hourLabel(t.peakHour)}:00 前后打开`}
-                </Text>
               </VStack>
             </ListCard>
 
@@ -103,30 +124,32 @@ export function RadarPage() {
                     return (
                       <VStack spacing={0} frame={{ maxWidth: Infinity }}>
                         <NavigationLink destination={<TagPage kind="circle" value={item.name} />} buttonStyle="plain">
-                          <HStack
-                            spacing={10}
+                          <VStack
+                            spacing={8}
                             padding={{ horizontal: 14, vertical: 12 }}
                             frame={{ maxWidth: Infinity }}
-                            alignment="center"
                             contentShape="rect"
                           >
-                            <Rectangle fill={c.fg} frame={{ width: 8, height: 8 }} clipShape="capsule" />
-                            <Text
-                              font="body"
-                              lineLimit={1}
-                              foregroundStyle={T.text}
-                              frame={{ maxWidth: Infinity, alignment: "leading" }}
-                            >
-                              {item.name}
-                            </Text>
-                            <Text font="caption2" foregroundStyle={T.faint}>
-                              {`${item.works} 部`}
-                            </Text>
-                            <Text font="footnote" foregroundStyle={T.sub}>
-                              {fmtHM(item.seconds)}
-                            </Text>
-                            <Image systemName="chevron.right" font="caption2" foregroundStyle={T.faint} />
-                          </HStack>
+                            <HStack spacing={8} frame={{ maxWidth: Infinity }} alignment="center">
+                              <Rectangle fill={c.fg} frame={{ width: 8, height: 8 }} clipShape="capsule" />
+                              <Text
+                                font="body"
+                                lineLimit={1}
+                                foregroundStyle={T.text}
+                                frame={{ maxWidth: Infinity, alignment: "leading" }}
+                              >
+                                {item.name}
+                              </Text>
+                              <Text font="caption2" foregroundStyle={T.faint}>
+                                {`${item.works} 部`}
+                              </Text>
+                              <Text font="footnote" foregroundStyle={T.sub}>
+                                {fmtHM(item.seconds)}
+                              </Text>
+                              <Image systemName="chevron.right" font="caption2" foregroundStyle={T.faint} />
+                            </HStack>
+                            <RatioBar ratio={item.seconds / maxCircle} color={c.fg} />
+                          </VStack>
                         </NavigationLink>
                         {i === circles.length - 1 ? null : (
                           <Rectangle
