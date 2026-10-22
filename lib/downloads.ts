@@ -37,6 +37,8 @@ export interface WorkProgress {
   done: number
   running: number
   queued: number
+  /** 真实进度 0..1：已下完的整轨 + 正在下的轨的百分比，一起算。 */
+  ratio: number
 }
 
 interface Task {
@@ -423,30 +425,31 @@ export function taskOf(workId: number, key: string): { state: "queued" | "runnin
 export function workProgress(workId: number): WorkProgress | null {
   const b = batches.get(workId)
   if (b == null) return null
+  return progressOf(workId, b)
+}
+
+/** 批次的进度快照。单轨下载时 done 永远是 0，所以要把正在下的那一轨的 ratio 也算进去，
+ *  否则存储页会一路停在 0%，直到整轨下完才跳一下。 */
+function progressOf(workId: number, b: { title: string; total: number; done: number }): WorkProgress {
   const mine = tasks.filter((t) => t.workId === workId)
+  const running = mine.reduce((n, t) => (t.state === "running" ? n + 1 : n), 0)
+  const queued = mine.reduce((n, t) => (t.state === "queued" ? n + 1 : n), 0)
+  const live = mine.reduce((n, t) => n + (t.state === "running" ? t.ratio : 0), 0)
+  const total = Math.max(b.total, b.done + mine.length)
   return {
     workId,
     title: b.title,
-    total: b.total,
+    total,
     done: b.done,
-    running: mine.reduce((n, t) => (t.state === "running" ? n + 1 : n), 0),
-    queued: mine.reduce((n, t) => (t.state === "queued" ? n + 1 : n), 0),
+    running,
+    queued,
+    ratio: total > 0 ? Math.min(1, (b.done + live) / total) : 0,
   }
 }
 
 export function activeJobs(): WorkProgress[] {
   const out: WorkProgress[] = []
-  for (const [workId, b] of batches) {
-    const mine = tasks.filter((t) => t.workId === workId)
-    out.push({
-      workId,
-      title: b.title,
-      total: b.total,
-      done: b.done,
-      running: mine.reduce((n, t) => (t.state === "running" ? n + 1 : n), 0),
-      queued: mine.reduce((n, t) => (t.state === "queued" ? n + 1 : n), 0),
-    })
-  }
+  for (const [workId, b] of batches) out.push(progressOf(workId, b))
   return out
 }
 

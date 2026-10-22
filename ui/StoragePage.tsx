@@ -1,4 +1,4 @@
-import { Group, Rectangle, ScrollView, Text, VStack, ZStack, useEffect, useState } from "scripting"
+import { Group, Navigation, Rectangle, ScrollView, Text, VStack, ZStack, useEffect, useState } from "scripting"
 import { library } from "../lib/store"
 import { fmtHM, totals } from "../lib/stats"
 import { shape, usePalette } from "../lib/theme"
@@ -9,11 +9,11 @@ import {
   offlineBytes,
   offlineList,
   removeAllOffline,
-  removeOffline,
   subscribeOffline,
 } from "../lib/downloads"
 import type { OfflineWork, WorkProgress } from "../lib/downloads"
 import { ConfirmLayer, GroupLabel, ListCard, ListRow, PageHeader } from "./parts"
+import { OfflineWorkPage } from "./OfflineWorkPage"
 
 function dayOf(at: number | undefined): string | null {
   if (at == null || at <= 0) return null
@@ -46,18 +46,14 @@ export function StoragePage() {
       ? "清除最近播放？"
       : ask === "stats"
       ? "清除收听记录？"
-      : ask === "all"
-      ? "清空离线缓存？"
-      : "删除这部缓存？"
+      : "清空离线缓存？"
 
   const dialogMessage =
     ask === "history"
       ? "列表会清空，收藏不受影响。"
       : ask === "stats"
       ? `会删掉 ${recCount} 条收听记录，累计时长一起归零。`
-      : ask === "all"
-      ? `会删掉 ${offWorks.length} 部作品的音频文件，释放 ${fmtBytes(offBytes)}。`
-      : "这一部作品的音频会从本机删除。"
+      : `会删掉 ${offWorks.length} 部作品的音频文件，释放 ${fmtBytes(offBytes)}。`
 
   const lastAt = library.history.reduce<number>((m, h) => (h.at > m ? h.at : m), 0)
   const lastSeen = dayOf(lastAt)
@@ -136,7 +132,7 @@ export function StoragePage() {
                     icon="arrow.down.circle"
                     title={j.title}
                     detail={`${j.done}/${j.total} 轨 · 下载 ${j.running} · 排队 ${j.queued}`}
-                    value={`${j.total > 0 ? Math.floor((j.done / j.total) * 100) : 0}%`}
+                    value={`${Math.min(99, Math.floor(j.ratio * 100))}%`}
                     last={i === arr.length - 1}
                     onTap={() => cancelWork(j.workId)}
                   />
@@ -168,12 +164,13 @@ export function StoragePage() {
             {offWorks.map((w, i) => (
               <ListRow
                 key={String(w.id)}
-                icon="arrow.down.circle.fill"
+                imageUrl={w.cover}
                 title={w.title}
                 detail={`${w.tracks.length} 轨${dayOf(w.at) != null ? " · " + dayOf(w.at) : ""}`}
                 value={fmtBytes(w.bytes)}
+                chevron
                 last={i === offWorks.length - 1}
-                onTap={() => setAsk(`work:${w.id}`)}
+                onTap={() => Navigation.present({ element: <OfflineWorkPage workId={w.id} /> })}
               />
             ))}
           </ListCard>
@@ -211,8 +208,7 @@ export function StoragePage() {
           onAction={() => {
             if (ask === "history") library.clearHistory()
             else if (ask === "stats") library.clearStats()
-            else if (ask === "all") removeAllOffline()
-            else removeOffline(Number(ask.slice(5)))
+            else removeAllOffline()
             setAsk(null)
           }}
           onCancel={() => setAsk(null)}

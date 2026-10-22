@@ -151,6 +151,7 @@ export function ListCard({ children }: { children: any }) {
 
 export function ListRow({
   icon,
+  imageUrl,
   title,
   detail,
   value,
@@ -160,6 +161,8 @@ export function ListRow({
   onTap,
 }: {
   icon?: string
+  /** 左侧改用封面缩略图（横图比例，不用方块）。 */
+  imageUrl?: string
   title: string
   detail?: string
   value?: string
@@ -179,7 +182,15 @@ export function ListRow({
         contentShape="rect"
         onTapGesture={onTap}
       >
-        {icon != null ? (
+        {imageUrl != null ? (
+          <Image
+            imageUrl={imageUrl}
+            resizable
+            scaleToFill
+            frame={{ width: 40, height: 30 }}
+            clipShape={shape(7)}
+          />
+        ) : icon != null ? (
           <Image
             systemName={icon}
             font="footnote"
@@ -215,7 +226,7 @@ export function ListRow({
         <Rectangle
           fill={T.border}
           frame={{ maxWidth: "infinity", height: 0.5 }}
-          padding={{ leading: icon != null ? 55 : 14 }}
+          padding={{ leading: imageUrl != null || icon != null ? 55 : 14 }}
         />
       )}
     </VStack>

@@ -121,8 +121,7 @@ export function WorkDetail({ work }: { work: Work }) {
   }
 
   const busy = prog != null
-  const pct =
-    prog != null && prog.total > 0 ? Math.min(99, Math.floor((prog.done / prog.total) * 100)) : 0
+  const pct = prog != null ? Math.min(99, Math.floor(prog.ratio * 100)) : 0
   const chipLabel = busy
     ? `${pct}%`
     : off != null
