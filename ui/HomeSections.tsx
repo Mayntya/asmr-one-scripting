@@ -163,7 +163,12 @@ export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }
   }, [heroUrl])
 
   return (
-    <ZStack frame={{ width: inner }} clipShape={shape(22)} background={T.card} alignment="top">
+    <ZStack
+      frame={{ width: inner }}
+      background={T.card}
+      mask={<Rectangle fill="#FFFFFF" clipShape={shape(22)} />}
+      alignment="top"
+    >
       <Rectangle
         fill={{
           colors: [mesh[0] as `#${string}`, mesh[1] as `#${string}`],
@@ -175,12 +180,7 @@ export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }
 
       <VStack spacing={0} frame={{ width: inner, alignment: "top" }}>
         <NavigationLink destination={<TagPage kind="tag" value={theme.sub} />} buttonStyle="plain">
-          <VStack
-            frame={{ width: inner, height: BANNER_H }}
-            clipShape={shape(22)}
-            mask={<Rectangle fill="#FFFFFF" clipShape={shape(22)} />}
-            spacing={0}
-          >
+          <VStack frame={{ width: inner, height: BANNER_H }} spacing={0}>
             <ZStack frame={{ width: inner, height: BANNER_H }} alignment="bottomLeading">
               {heroUrl.length > 0 ? (
                 <Image
@@ -189,14 +189,12 @@ export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }
                   scaleToFill
                   aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
                   frame={{ width: inner, height: BANNER_H }}
-                  clipShape={shape(22)}
                   placeholder={<Rectangle fill={T.rowBgHi} frame={{ width: inner, height: BANNER_H }} />}
                 />
               ) : (
                 <Rectangle fill={T.rowBgHi} frame={{ width: inner, height: BANNER_H }} />
               )}
               <Rectangle
-                clipShape={shape(22)}
                 fill={{
                   colors: ["rgba(0,0,0,0.10)", "rgba(0,0,0,0.52)", "rgba(0,0,0,0.94)"],
                   startPoint: "top",
