@@ -18,13 +18,14 @@ import type { TrackNode, Work } from "../lib/api"
 import { flattenAudio, formatDuration, getTracks } from "../lib/api"
 import { library } from "../lib/store"
 import { player } from "../lib/player"
-import { cancelDownload, downloadWork, fmtBytes, offlineJob, offlineNodes, offlineOf, removeOffline, subscribeOffline } from "../lib/downloads"
-import type { DownloadJob, OfflineWork } from "../lib/downloads"
+import { cancelTrack, cancelWork, enqueueTrack, fmtBytes, isTrackOffline, lastDownloadError, offlineNodes, offlineOf, removeOffline, removeTrack, subscribeOffline, taskOf, workProgress } from "../lib/downloads"
+import type { OfflineWork, WorkProgress } from "../lib/downloads"
 import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
 import { cvTone, tagTone } from "../lib/palette"
 import { TagLink } from "./TagChip"
 import { PlayerPage } from "./PlayerView"
 import { ShareCardSheet } from "./ShareCardSheet"
+import { DownloadSheet } from "./DownloadSheet"
 
 type Row =
   | { kind: "folder"; title: string; count: number }
@@ -52,13 +53,15 @@ export function WorkDetail({ work }: { work: Work }) {
   const [error, setError] = useState<string | null>(null)
   const [fav, setFav] = useState<boolean>(library.isFavorite(work.id))
   const [off, setOff] = useState<OfflineWork | null>(offlineOf(work.id))
-  const [dl, setDl] = useState<DownloadJob | null>(offlineJob())
+  const [prog, setProg] = useState<WorkProgress | null>(workProgress(work.id))
+  const [, setTick] = useState(0)
   const [ask, setAsk] = useState<"del" | "cancel" | null>(null)
 
   useEffect(() => {
     const up = () => {
       setOff(offlineOf(work.id))
-      setDl(offlineJob())
+      setProg(workProgress(work.id))
+      setTick((n) => n + 1)
     }
     up()
     return subscribeOffline(up)
@@ -98,24 +101,48 @@ export function WorkDetail({ work }: { work: Work }) {
     Navigation.present({ element: <PlayerPage /> })
   }
 
-  const busy = dl != null && dl.workId === work.id && dl.running
+  const onTrackChip = (t: TrackNode) => {
+    if (taskOf(work.id, t.key) != null) {
+      cancelTrack(work.id, t.key)
+      return
+    }
+    if (isTrackOffline(work.id, t.key)) {
+      removeTrack(work.id, t.key)
+      return
+    }
+    enqueueTrack(work, t)
+  }
+
+  const trackIcon = (key: string) => {
+    const t = taskOf(work.id, key)
+    if (t != null) return t.state === "running" ? "arrow.down.circle.fill" : "clock"
+    return isTrackOffline(work.id, key) ? "checkmark.circle.fill" : "arrow.down.circle"
+  }
+
+  const trackTone = (key: string) => {
+    if (taskOf(work.id, key) != null) return T.accentText
+    return isTrackOffline(work.id, key) ? T.accent : T.faint
+  }
+
+  const busy = prog != null
   const pct =
-    busy && dl != null
-      ? Math.min(99, Math.floor(((dl.done + dl.curRatio) / Math.max(1, dl.total)) * 100))
-      : 0
-  const chipLabel = busy ? `${pct}%` : off != null ? fmtBytes(off.bytes) : "下载"
-  const chipIcon = busy ? "arrow.down" : off != null ? "checkmark" : "arrow.down.to.line"
+    prog != null && prog.total > 0 ? Math.min(99, Math.floor((prog.done / prog.total) * 100)) : 0
+  const chipLabel = busy
+    ? `${pct}%`
+    : off != null
+      ? off.bytes > 0
+        ? fmtBytes(off.bytes)
+        : "下载"
+      : "下载"
+  const chipIcon = busy ? "arrow.down" : off != null && off.bytes > 0 ? "checkmark" : "arrow.down.to.line"
+  const chipHot = busy || (off != null && off.bytes > 0)
 
   const onChip = () => {
     if (busy) {
       setAsk("cancel")
       return
     }
-    if (off != null) {
-      setAsk("del")
-      return
-    }
-    if (tracks.length > 0) downloadWork(work, tracks)
+    if (audio.length > 0) Navigation.present({ element: <DownloadSheet work={work} tracks={tracks} /> })
   }
 
   return (
@@ -124,12 +151,10 @@ export function WorkDetail({ work }: { work: Work }) {
       navigationBarTitleDisplayMode="inline"
       background={<Rectangle fill={T.bg} ignoresSafeArea />}
       confirmationDialog={{
-        title: ask === "cancel" ? "停止下载？" : "删除离线缓存？",
+        title: "停止下载？",
         message: (
           <Text>
-            {ask === "cancel"
-              ? `已下载的 ${dl?.done ?? 0} 轨会被删掉。`
-              : `《${work.title}》的 ${off?.tracks.length ?? 0} 轨会从本机删除。`}
+            {`已经下完的 ${prog?.done ?? 0} 轨会留在本机，排队中的取消掉。`}
           </Text>
         ),
         isPresented: ask != null,
@@ -139,11 +164,10 @@ export function WorkDetail({ work }: { work: Work }) {
         actions: (
           <Group>
             <Button
-              title={ask === "cancel" ? "停止" : "删除"}
+              title="停止"
               role="destructive"
               action={() => {
-                if (ask === "cancel") cancelDownload()
-                if (ask === "del") removeOffline(work.id)
+                cancelWork(work.id)
                 setAsk(null)
               }}
             />
@@ -310,9 +334,9 @@ export function WorkDetail({ work }: { work: Work }) {
               systemName={chipIcon}
               font="caption2"
               fontWeight="semibold"
-              foregroundStyle={off != null || busy ? T.accentText : T.sub}
+              foregroundStyle={chipHot ? T.accentText : T.sub}
             />
-            <Text font="caption2" fontWeight="semibold" foregroundStyle={off != null || busy ? T.accentText : T.sub}>
+            <Text font="caption2" fontWeight="semibold" foregroundStyle={chipHot ? T.accentText : T.sub}>
               {chipLabel}
             </Text>
           </HStack>
@@ -333,11 +357,14 @@ export function WorkDetail({ work }: { work: Work }) {
           </Text>
         ) : null}
 
-        {dl != null && dl.workId === work.id && dl.error != null && !dl.running ? (
-          <Text font="caption2" foregroundStyle={T.accentText}>
-            {`下载中断：${dl.error}`}
-          </Text>
-        ) : null}
+        {(() => {
+          const e = lastDownloadError()
+          return e != null && e.workId === work.id && (prog == null || prog.running + prog.queued === 0) ? (
+            <Text font="caption2" foregroundStyle={T.accentText}>
+              {`下载中断：${e.message}`}
+            </Text>
+          ) : null
+        })()}
 
         {rows.map((row) =>
           row.kind === "folder" ? (
@@ -383,6 +410,18 @@ export function WorkDetail({ work }: { work: Work }) {
               <Text font="caption2" foregroundStyle={T.faint}>
                 {formatDuration(row.track.duration)}
               </Text>
+              <HStack
+                spacing={0}
+                frame={{ width: 30, height: 30 }}
+                contentShape="rect"
+                onTapGesture={() => onTrackChip(row.track)}
+              >
+                <Image
+                  systemName={trackIcon(row.track.key)}
+                  font="footnote"
+                  foregroundStyle={trackTone(row.track.key)}
+                />
+              </HStack>
             </HStack>
           )
         )}

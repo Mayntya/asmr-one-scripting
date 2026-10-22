@@ -2,8 +2,17 @@ import { Button, Group, Rectangle, ScrollView, Text, VStack, useEffect, useState
 import { library } from "../lib/store"
 import { fmtHM, totals } from "../lib/stats"
 import { shape, usePalette } from "../lib/theme"
-import { fmtBytes, offlineBytes, offlineList, removeAllOffline, removeOffline, subscribeOffline } from "../lib/downloads"
-import type { OfflineWork } from "../lib/downloads"
+import {
+  activeJobs,
+  cancelWork,
+  fmtBytes,
+  offlineBytes,
+  offlineList,
+  removeAllOffline,
+  removeOffline,
+  subscribeOffline,
+} from "../lib/downloads"
+import type { OfflineWork, WorkProgress } from "../lib/downloads"
 import { GroupLabel, ListCard, ListRow, PageHeader } from "./parts"
 
 function dayOf(at: number | undefined): string | null {
@@ -20,10 +29,14 @@ export function StoragePage() {
   const recCount = library.tracks.length
   const [ask, setAsk] = useState<string | null>(null)
   const [offWorks, setOffWorks] = useState<OfflineWork[]>(offlineList())
+  const [jobs, setJobs] = useState<WorkProgress[]>(activeJobs())
   const offBytes = offlineBytes()
 
   useEffect(() => {
-    const up = () => setOffWorks(offlineList())
+    const up = () => {
+      setOffWorks(offlineList())
+      setJobs(activeJobs())
+    }
     up()
     return subscribeOffline(up)
   }, [])
@@ -134,6 +147,35 @@ export function StoragePage() {
           />
         </ListCard>
 
+        {jobs.some((j) => j.running + j.queued > 0) ? (
+          <Group>
+            <GroupLabel text="正在下载" />
+            <ListCard>
+              {jobs
+                .filter((j) => j.running + j.queued > 0)
+                .map((j, i, arr) => (
+                  <ListRow
+                    key={`job-${j.workId}`}
+                    icon="arrow.down.circle"
+                    title={j.title}
+                    detail={`${j.done}/${j.total} 轨 · 下载 ${j.running} · 排队 ${j.queued}`}
+                    value={`${j.total > 0 ? Math.floor((j.done / j.total) * 100) : 0}%`}
+                    last={i === arr.length - 1}
+                    onTap={() => cancelWork(j.workId)}
+                  />
+                ))}
+            </ListCard>
+            <Text
+              font="caption2"
+              foregroundStyle={T.faint}
+              padding={{ horizontal: 4 }}
+              frame={{ maxWidth: Infinity, alignment: "leading" }}
+            >
+              点一下就停下来，已经下完的会留着。
+            </Text>
+          </Group>
+        ) : null}
+
         <GroupLabel text="离线缓存" />
         {offWorks.length === 0 ? (
           <Text
@@ -142,7 +184,7 @@ export function StoragePage() {
             padding={{ horizontal: 4, vertical: 6 }}
             frame={{ maxWidth: Infinity, alignment: "leading" }}
           >
-            在作品详情页点一下「下载」，整部音频就存到本机。
+            在作品页点「下载」，自己挑要哪些；也行点单轨右边的下载图标。
           </Text>
         ) : (
           <ListCard>
