@@ -25,12 +25,12 @@ import {
   CircleTile,
   CvBubble,
   LaneCard,
-  ThemeBanner,
-  pickTheme,
+  ThemeRail,
+  pickThemes,
   rankNames,
   seededSample,
 } from "./HomeSections"
-import type { ThemeDef } from "./HomeSections"
+import type { ThemeSet } from "./HomeSections"
 import { PosterCard } from "./Poster"
 import { WorkRowBig } from "./WorkRowBig"
 import { SectionLabel } from "./parts"
@@ -63,8 +63,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
   const [pool, setPool] = useState<Work[]>([])
   const [fresh, setFresh] = useState<Work[]>([])
   const [best, setBest] = useState<Work[]>([])
-  const [theme, setTheme] = useState<ThemeDef | null>(null)
-  const [themeWorks, setThemeWorks] = useState<Work[]>([])
+  const [themes, setThemes] = useState<ThemeSet[]>([])
 
   const load = async (kw: string, o: SortKey, p: number) => {
     const mine = ++searchSeq
@@ -85,7 +84,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
   }
 
   const loadHome = async () => {
-    const themeP = pickTheme()
+    const themeP = pickThemes(3)
     try {
       const [dl, rel, rt] = await Promise.all([
         searchWorks("", 1, "dl_count", 100),
@@ -96,10 +95,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
       setFresh(rel.works)
       setBest(rt.works)
       const picked = await themeP
-      if (picked != null) {
-        setTheme(picked.theme)
-        setThemeWorks(picked.works)
-      }
+      if (picked.length > 0) setThemes(picked)
     } catch {}
   }
 
@@ -207,7 +203,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
           <VStack spacing={24} frame={{ maxWidth: Infinity }}>
             {hot.length > 0 ? row("热门", "按下载量", LANE_H, hot.map((w) => <LaneCard key={w.id} work={w} />)) : null}
 
-            {theme != null && themeWorks.length > 0 ? <ThemeBanner theme={theme} works={themeWorks} /> : null}
+            {themes.length > 0 ? <ThemeRail sets={themes} /> : null}
 
             {best.length > 0 ? row("本周最佳", "按评分", LANE_H, best.map((w) => <LaneCard key={w.id} work={w} />)) : null}
 

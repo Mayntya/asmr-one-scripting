@@ -115,34 +115,52 @@ function rememberTheme(title: string) {
   } catch {}
 }
 
-/** 洗牌整个主题池，逐个试到能凑出一张主图加五张推荐为止。 */
-export async function pickTheme(): Promise<{ theme: ThemeDef; works: Work[] } | null> {
-  const recent = readRecentThemes()
-  const fresh = THEMES.filter((t) => !recent.includes(t.title))
-  const a = fresh.length >= 8 ? fresh.slice() : THEMES.slice()
+/** 洗牌整个主题池，凑够 count 组（各带主图 + 五张推荐）。 */
+export interface ThemeSet {
+  theme: ThemeDef
+  works: Work[]
+}
+
+function shuffle<T>(list: T[]): T[] {
+  const a = list.slice()
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     const t = a[i]
     a[i] = a[j]
     a[j] = t
   }
-  for (const t of a.slice(0, 4)) {
-    try {
-      const r = await searchWorks(t.query, 1, "dl_count", 6)
-      if (r.works.length >= 6) {
-        rememberTheme(t.title)
-        return { theme: t, works: r.works }
-      }
-    } catch {}
+  return a
+}
+
+export async function pickThemes(count = 3): Promise<ThemeSet[]> {
+  const recent = readRecentThemes()
+  const freshList = THEMES.filter((t) => !recent.includes(t.title))
+  const pool = shuffle(freshList.length >= count * 4 ? freshList : THEMES.slice())
+  const picked: ThemeSet[] = []
+  for (let i = 0; i < pool.length && picked.length < count; i += 4) {
+    const batch = await Promise.all(
+      pool.slice(i, i + 4).map(async (t) => {
+        try {
+          const r = await searchWorks(t.query, 1, "dl_count", 6)
+          return r.works.length >= 6 ? { theme: t, works: r.works } : null
+        } catch {
+          return null
+        }
+      })
+    )
+    for (const item of batch) {
+      if (item != null && picked.length < count) picked.push(item)
+    }
   }
-  return null
+  for (const p of picked) rememberTheme(p.theme.title)
+  return picked
 }
 
 const BANNER_H = 178
 
-export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }) {
+export function ThemeBanner({ theme, works, width }: { theme: ThemeDef; works: Work[]; width?: number }) {
   const T = usePalette()
-  const inner = Math.min(Device.screen.width, 560) - 32
+  const inner = width ?? Math.min(Device.screen.width, 560) - 32
   const pad = 10
   const railW = inner - pad * 2
   const cardW = Math.floor(railW * 0.38)
@@ -250,6 +268,29 @@ export function ThemeBanner({ theme, works }: { theme: ThemeDef; works: Work[] }
         </VStack>
       </VStack>
     </ZStack>
+  )
+}
+
+/* ---------------- 主题轮播（一排三组） ---------------- */
+
+const RAIL_GAP = 12
+
+/** 横向一排：完整显示一组，右侧露出下一组的边。 */
+export function ThemeRail({ sets }: { sets: ThemeSet[] }) {
+  const full = Math.min(Device.screen.width, 560) - 32
+  const cardW = full - 40
+  const miniW = Math.floor((cardW - 20) * 0.38)
+  const miniH = Math.round((miniW * 3) / 4)
+  const totalH = BANNER_H + 20 + miniH + 26
+
+  return (
+    <ScrollView axes="horizontal" frame={{ width: full, height: totalH }}>
+      <HStack spacing={RAIL_GAP} frame={{ alignment: "leading" }}>
+        {sets.map((s) => (
+          <ThemeBanner key={s.theme.title} theme={s.theme} works={s.works} width={cardW} />
+        ))}
+      </HStack>
+    </ScrollView>
   )
 }
 
