@@ -1,4 +1,6 @@
 import {
+  Button,
+  Group,
   HStack,
   Image,
   Navigation,
@@ -16,6 +18,8 @@ import type { TrackNode, Work } from "../lib/api"
 import { flattenAudio, formatDuration, getTracks } from "../lib/api"
 import { library } from "../lib/store"
 import { player } from "../lib/player"
+import { cancelDownload, downloadWork, fmtBytes, offlineJob, offlineNodes, offlineOf, removeOffline, subscribeOffline } from "../lib/downloads"
+import type { DownloadJob, OfflineWork } from "../lib/downloads"
 import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
 import { cvTone, tagTone } from "../lib/palette"
 import { TagLink } from "./TagChip"
@@ -47,6 +51,18 @@ export function WorkDetail({ work }: { work: Work }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fav, setFav] = useState<boolean>(library.isFavorite(work.id))
+  const [off, setOff] = useState<OfflineWork | null>(offlineOf(work.id))
+  const [dl, setDl] = useState<DownloadJob | null>(offlineJob())
+  const [ask, setAsk] = useState<"del" | "cancel" | null>(null)
+
+  useEffect(() => {
+    const up = () => {
+      setOff(offlineOf(work.id))
+      setDl(offlineJob())
+    }
+    up()
+    return subscribeOffline(up)
+  }, [work.id])
 
   useEffect(() => {
     let alive = true
@@ -58,6 +74,13 @@ export function WorkDetail({ work }: { work: Work }) {
       })
       .catch((e: any) => {
         if (!alive) return
+        // 断网但下过：用缓存里的曲目表撑着
+        const local = offlineNodes(work.id)
+        if (local.length > 0) {
+          setTracks(local)
+          setLoading(false)
+          return
+        }
         setError(String(e?.message ?? e))
         setLoading(false)
       })
@@ -75,8 +98,60 @@ export function WorkDetail({ work }: { work: Work }) {
     Navigation.present({ element: <PlayerPage /> })
   }
 
+  const busy = dl != null && dl.workId === work.id && dl.running
+  const pct =
+    busy && dl != null
+      ? Math.min(99, Math.floor(((dl.done + dl.curRatio) / Math.max(1, dl.total)) * 100))
+      : 0
+  const chipLabel = busy ? `${pct}%` : off != null ? fmtBytes(off.bytes) : "下载"
+  const chipIcon = busy ? "arrow.down" : off != null ? "checkmark" : "arrow.down.to.line"
+
+  const onChip = () => {
+    if (busy) {
+      setAsk("cancel")
+      return
+    }
+    if (off != null) {
+      setAsk("del")
+      return
+    }
+    if (tracks.length > 0) downloadWork(work, tracks)
+  }
+
   return (
-    <ScrollView navigationTitle="" navigationBarTitleDisplayMode="inline" background={<Rectangle fill={T.bg} ignoresSafeArea />}>
+    <ScrollView
+      navigationTitle=""
+      navigationBarTitleDisplayMode="inline"
+      background={<Rectangle fill={T.bg} ignoresSafeArea />}
+      confirmationDialog={{
+        title: ask === "cancel" ? "停止下载？" : "删除离线缓存？",
+        message: (
+          <Text>
+            {ask === "cancel"
+              ? `已下载的 ${dl?.done ?? 0} 轨会被删掉。`
+              : `《${work.title}》的 ${off?.tracks.length ?? 0} 轨会从本机删除。`}
+          </Text>
+        ),
+        isPresented: ask != null,
+        onChanged: (v: boolean) => {
+          if (!v) setAsk(null)
+        },
+        actions: (
+          <Group>
+            <Button
+              title={ask === "cancel" ? "停止" : "删除"}
+              role="destructive"
+              action={() => {
+                if (ask === "cancel") cancelDownload()
+                if (ask === "del") removeOffline(work.id)
+                setAsk(null)
+              }}
+            />
+            <Button title="取消" role="cancel" action={() => setAsk(null)} />
+          </Group>
+        ),
+      }}
+    >
       <VStack spacing={20} padding={{ horizontal: 16, top: 10, bottom: 160 }} frame={{ maxWidth: Infinity }}>
         <Image
           imageUrl={work.cover}
@@ -215,7 +290,7 @@ export function WorkDetail({ work }: { work: Work }) {
           ) : null}
         </VStack>
 
-        <HStack frame={{ maxWidth: Infinity }} alignment="center">
+        <HStack frame={{ maxWidth: Infinity }} alignment="center" spacing={8}>
           <Text font="title3" fontWeight="bold" foregroundStyle={T.text}>
             曲目
           </Text>
@@ -223,6 +298,24 @@ export function WorkDetail({ work }: { work: Work }) {
           <Text font="caption2" foregroundStyle={T.faint}>
             {loading ? "读取中…" : `${audio.length} 轨`}
           </Text>
+          <HStack
+            spacing={4}
+            padding={{ horizontal: 9, vertical: 4 }}
+            background={T.cardHi}
+            clipShape={shape(11)}
+            contentShape="rect"
+            onTapGesture={onChip}
+          >
+            <Image
+              systemName={chipIcon}
+              font="caption2"
+              fontWeight="semibold"
+              foregroundStyle={off != null || busy ? T.accentText : T.sub}
+            />
+            <Text font="caption2" fontWeight="semibold" foregroundStyle={off != null || busy ? T.accentText : T.sub}>
+              {chipLabel}
+            </Text>
+          </HStack>
         </HStack>
 
         {loading ? (
@@ -237,6 +330,12 @@ export function WorkDetail({ work }: { work: Work }) {
         {error != null ? (
           <Text font="footnote" foregroundStyle={T.accentText}>
             {error}
+          </Text>
+        ) : null}
+
+        {dl != null && dl.workId === work.id && dl.error != null && !dl.running ? (
+          <Text font="caption2" foregroundStyle={T.accentText}>
+            {`下载中断：${dl.error}`}
           </Text>
         ) : null}
 

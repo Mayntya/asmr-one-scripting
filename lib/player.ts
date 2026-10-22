@@ -4,6 +4,7 @@ import type { LrcCue } from "./lrc"
 import { parseSubtitle } from "./lrc"
 import { library } from "./store"
 import { loadSession, saveSession } from "./session"
+import { offlinePath } from "./downloads"
 
 
 export interface PlayerState {
@@ -375,14 +376,15 @@ class PlayerController {
     await this.prepareSession()
 
     const url = track.url ?? track.lowUrl
-    if (url == null) {
+    const local = this.state.work != null ? offlinePath(this.state.work.id, track.key) : null
+    if (url == null && local == null) {
       this.state.loading = false
       this.state.error = "该曲目没有可播放的地址"
       this.emit()
       return
     }
 
-    const ok = this.ap.setSource(url)
+    const ok = this.ap.setSource(local ?? (url as string))
     if (!ok) {
       this.state.loading = false
       this.state.error = "无法加载音频"
