@@ -15,7 +15,22 @@ import {
 } from "scripting"
 import type { SortKey, Work } from "../lib/api"
 import { searchWorks } from "../lib/api"
-import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
+import { shape, usePalette } from "../lib/theme"
+import {
+  CIRCLE_H,
+  CV_H,
+  LANE_H,
+  TAG_H,
+  BigTag,
+  CircleTile,
+  CvBubble,
+  LaneCard,
+  ThemeBanner,
+  pickTheme,
+  rankNames,
+  seededSample,
+} from "./HomeSections"
+import type { ThemeDef } from "./HomeSections"
 import { PosterCard } from "./Poster"
 import { WorkRowBig } from "./WorkRowBig"
 import { SectionLabel } from "./parts"
@@ -32,23 +47,24 @@ const ORDERS: { key: SortKey; label: string }[] = [
 let searchSeq = 0
 let debounceId: any = null
 
-const TOP_SECTIONS: { key: SortKey; title: string }[] = [
-  { key: "release", title: "最新上架" },
-  { key: "dl_count", title: "最多下载" },
-  { key: "rating", title: "评分最高" },
-]
-
 export function DiscoverPage({ onClose }: { onClose: () => void }) {
   const T = usePalette()
   const [input, setInput] = useState("")
   const [keyword, setKeyword] = useState("")
   const [order, setOrder] = useState<SortKey>("release")
   const [works, setWorks] = useState<Work[]>([])
-  const [tops, setTops] = useState<{ key: SortKey; title: string; works: Work[] }[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  /** 每次打开换一批：主题和标签都按这个种子挑。 */
+  const [seed] = useState(() => Math.floor(Math.random() * 1000000))
+  const [pool, setPool] = useState<Work[]>([])
+  const [fresh, setFresh] = useState<Work[]>([])
+  const [best, setBest] = useState<Work[]>([])
+  const [theme, setTheme] = useState<ThemeDef | null>(null)
+  const [themeWorks, setThemeWorks] = useState<Work[]>([])
 
   const load = async (kw: string, o: SortKey, p: number) => {
     const mine = ++searchSeq
@@ -68,15 +84,27 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const loadTops = async () => {
+  const loadHome = async () => {
+    const themeP = pickTheme()
     try {
-      const res = await Promise.all(TOP_SECTIONS.map((s) => searchWorks("", 1, s.key, 12)))
-      setTops(TOP_SECTIONS.map((s, i) => ({ ...s, works: res[i].works })))
+      const [dl, rel, rt] = await Promise.all([
+        searchWorks("", 1, "dl_count", 100),
+        searchWorks("", 1, "release", 12),
+        searchWorks("", 1, "rating", 12),
+      ])
+      setPool(dl.works)
+      setFresh(rel.works)
+      setBest(rt.works)
+      const picked = await themeP
+      if (picked != null) {
+        setTheme(picked.theme)
+        setThemeWorks(picked.works)
+      }
     } catch {}
   }
 
   useEffect(() => {
-    loadTops()
+    loadHome()
     load("", "release", 1)
   }, [])
 
@@ -97,6 +125,24 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
       submit(v.trim())
     }, 420)
   }
+
+  const hot = pool.slice(0, 12)
+  const cvs = rankNames(pool, "vas", 14)
+  const circles = rankNames(pool, "circle", 10)
+  const tags = seededSample(rankNames(pool, "tags", 40), 16, seed)
+  const shelves = [
+    { title: "最新上架", works: fresh },
+    { title: "评分最高", works: best },
+  ].filter((s) => s.works.length > 0)
+
+  const row = (title: string, right: string | undefined, h: number, children: any) => (
+    <VStack spacing={10} frame={{ maxWidth: Infinity }}>
+      <SectionLabel text={title} right={right} />
+      <ScrollView axes="horizontal" frame={{ height: h }}>
+        <HStack spacing={12}>{children}</HStack>
+      </ScrollView>
+    </VStack>
+  )
 
   return (
     <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }} background={T.bg}>
@@ -157,27 +203,40 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
           ) : null}
         </HStack>
 
-        <HStack spacing={8} frame={{ maxWidth: Infinity }}>
-          <Text font="caption2" foregroundStyle={T.faint} lineLimit={1}>
-            {keyword.length > 0 ? "$tag:耳かき$ 筛标签 · $circle:社团$ · 前面加 - 排除" : "点卡片进详情 · 长按标题搜索试试"}
-          </Text>
-          <Spacer />
-        </HStack>
+        {keyword.length === 0 ? (
+          <VStack spacing={24} frame={{ maxWidth: Infinity }}>
+            {hot.length > 0 ? row("热门", "按下载量", LANE_H, hot.map((w) => <LaneCard key={w.id} work={w} />)) : null}
 
-        {keyword.length === 0 && tops.length > 0 ? (
-          <VStack spacing={22} frame={{ maxWidth: Infinity }}>
-            {tops.map((sec) => (
-              <VStack key={sec.key} spacing={12} frame={{ maxWidth: Infinity }}>
-                <SectionLabel text={sec.title} />
-                <ScrollView axes="horizontal" frame={{ height: 212 }}>
-                  <HStack spacing={12}>
-                    {sec.works.map((w) => (
-                      <PosterCard key={w.id} work={w} />
-                    ))}
-                  </HStack>
-                </ScrollView>
-              </VStack>
-            ))}
+            {theme != null && themeWorks.length > 0 ? <ThemeBanner theme={theme} works={themeWorks} /> : null}
+
+            {best.length > 0 ? row("本周最佳", "按评分", LANE_H, best.map((w) => <LaneCard key={w.id} work={w} />)) : null}
+
+            {cvs.length > 0
+              ? row("热门 CV", "点进去看全部", CV_H, cvs.map((c) => <CvBubble key={c.name} name={c.name} count={c.count} />))
+              : null}
+
+            {circles.length > 0
+              ? row("社团", undefined, CIRCLE_H, circles.map((c) => <CircleTile key={c.name} name={c.name} count={c.count} />))
+              : null}
+
+            {tags.length > 0
+              ? row("分类浏览", "随手点一个", TAG_H, tags.map((t) => <BigTag key={t.name} name={t.name} />))
+              : null}
+
+            <VStack spacing={22} frame={{ maxWidth: Infinity }}>
+              {shelves.map((sec) => (
+                <VStack key={sec.title} spacing={12} frame={{ maxWidth: Infinity }}>
+                  <SectionLabel text={sec.title} />
+                  <ScrollView axes="horizontal" frame={{ height: 212 }}>
+                    <HStack spacing={12}>
+                      {sec.works.map((w) => (
+                        <PosterCard key={w.id} work={w} />
+                      ))}
+                    </HStack>
+                  </ScrollView>
+                </VStack>
+              ))}
+            </VStack>
           </VStack>
         ) : null}
 

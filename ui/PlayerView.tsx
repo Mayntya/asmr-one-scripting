@@ -25,16 +25,38 @@ import { loadMesh, meshFor } from "../lib/artwork"
 import { MeshBackdrop } from "./MeshBackdrop"
 import { WorkDetail } from "./WorkDetail"
 
-/** 播放页永远压在 mesh 背景上，所以这一套白字不跟主题走。 */
-const ON = {
+/** 播放页压在 mesh 背景上：深色给白字，浅色反过来给深字，玻璃块用半透明瓷白，别做成抠出来的白纸片。 */
+const ON_DARK = {
   text: "#FFFFFF",
   sub: "rgba(255,255,255,0.72)",
   faint: "rgba(255,255,255,0.46)",
   glass: "rgba(255,255,255,0.14)",
   glassHi: "rgba(255,255,255,0.22)",
   border: "rgba(255,255,255,0.18)",
+  track: "rgba(255,255,255,0.26)",
   accent: "#FFA6C4",
+  playBg: "rgba(255,255,255,0.95)",
+  playFg: "#1B1017",
+  playShadow: "rgba(0,0,0,0.30)",
 } as const
+
+const ON_LIGHT = {
+  text: "#15151A",
+  sub: "rgba(21,21,26,0.66)",
+  faint: "rgba(21,21,26,0.44)",
+  glass: "rgba(255,255,255,0.50)",
+  glassHi: "rgba(255,255,255,0.68)",
+  border: "rgba(0,0,0,0.09)",
+  track: "rgba(21,21,26,0.16)",
+  accent: "#D9457F",
+  playBg: "rgba(255,255,255,0.80)",
+  playFg: "#1B1017",
+  playShadow: "rgba(0,0,0,0.15)",
+} as const
+
+function useOn() {
+  return usePalette().scheme === "dark" ? ON_DARK : ON_LIGHT
+}
 
 export function usePlayerState(): PlayerState {
   const [state, setState] = useState<PlayerState>({ ...player.state })
@@ -47,6 +69,7 @@ export function usePlayerState(): PlayerState {
 
 export function MiniPlayer() {
   const T = usePalette()
+  const ON = useOn()
   const state = usePlayerState()
   const work = state.work
   if (work == null) return <VStack />
@@ -144,6 +167,7 @@ function Scrubber({
   duration: number
   onSeek: (t: number) => void
 }) {
+  const ON = useOn()
   const [dragging, setDragging] = useState<number | null>(null)
   const barW = Device.screen.width - 44
   const base = duration > 0 ? Math.min(1, Math.max(0, time / duration)) : 0
@@ -166,7 +190,7 @@ function Scrubber({
       <HStack
         spacing={0}
         frame={{ width: barW, height: h }}
-        background="rgba(255,255,255,0.26)"
+        background={ON.track}
         clipShape="capsule"
         animation={{ animation: Animation.easeOut(0.18), value: h }}
       >
@@ -179,6 +203,7 @@ function Scrubber({
 
 export function PlayerPage() {
   const T = usePalette()
+  const ON = useOn()
   const state = usePlayerState()
   const dismiss = Navigation.useDismiss()
   const [tick, setTick] = useState(0)
@@ -404,11 +429,12 @@ export function PlayerPage() {
               <Image
                 systemName={state.playing ? "pause.fill" : "play.fill"}
                 font="largeTitle"
-                foregroundStyle="#1B1017"
+                foregroundStyle={ON.playFg}
                 frame={{ width: 82, height: 82 }}
-                background="rgba(255,255,255,0.95)"
+                glassEffect={glassCircle()}
+                background={ON.playBg}
                 clipShape="circle"
-                shadow={{ color: "rgba(0,0,0,0.3)", radius: 18, y: 8 }}
+                shadow={{ color: ON.playShadow, radius: 18, y: 8 }}
                 contentShape="circle"
                 onTapGesture={() => player.toggle()}
               />
@@ -523,6 +549,7 @@ export function PlayerPage() {
 
 export function QueuePage() {
   const T = usePalette()
+  const ON = useOn()
   const state = usePlayerState()
   const dismiss = Navigation.useDismiss()
 
