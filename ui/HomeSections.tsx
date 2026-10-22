@@ -188,18 +188,18 @@ export function ThemeBanner({ theme, works, width }: { theme: ThemeDef; works: W
       alignment="top"
     >
       <Rectangle
-        fill={{
-          colors: [mesh[0] as `#${string}`, mesh[1] as `#${string}`],
-          startPoint: "top",
-          endPoint: "bottom",
-        }}
+        fill={mesh[0] as `#${string}`}
         frame={{ maxWidth: Infinity, maxHeight: Infinity }}
       />
 
       <VStack spacing={0} frame={{ width: inner, alignment: "top" }}>
         <NavigationLink destination={<TagPage kind="tag" value={theme.sub} />} buttonStyle="plain">
           <VStack frame={{ width: inner, height: BANNER_H }} spacing={0}>
-            <ZStack frame={{ width: inner, height: BANNER_H }} alignment="bottomLeading">
+            <ZStack
+              frame={{ width: inner, height: BANNER_H }}
+              mask={<Rectangle fill="#FFFFFF" />}
+              alignment="bottomLeading"
+            >
               {heroUrl.length > 0 ? (
                 <Image
                   imageUrl={heroUrl}
@@ -237,7 +237,7 @@ export function ThemeBanner({ theme, works, width }: { theme: ThemeDef; works: W
         </NavigationLink>
 
         <VStack spacing={0} padding={{ horizontal: pad, top: pad, bottom: pad }} frame={{ width: inner, alignment: "leading" }}>
-          <ScrollView axes="horizontal" frame={{ height: cardH + 26 }}>
+          <ScrollView axes="horizontal" frame={{ height: cardH + 26 }} mask={<Rectangle fill="#FFFFFF" />}>
             <HStack spacing={8} frame={{ alignment: "leading" }}>
               {works.slice(1, 6).map((w) => (
                 <NavigationLink key={w.id} destination={<WorkDetail work={w} />} buttonStyle="plain">
@@ -249,6 +249,7 @@ export function ThemeBanner({ theme, works, width }: { theme: ThemeDef; works: W
                       aspectRatio={{ value: 4 / 3, contentMode: "fill" }}
                       frame={{ width: cardW, height: cardH }}
                       clipShape={shape(10)}
+                      mask={<Rectangle fill="#FFFFFF" clipShape={shape(10)} />}
                       placeholder={<Rectangle fill="rgba(0,0,0,0.28)" frame={{ width: cardW, height: cardH }} />}
                     />
                     <Text
