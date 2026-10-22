@@ -376,6 +376,7 @@ export function PlayerPage() {
                 glassEffect={glassCircle()}
                 background={ON.glass}
                 border={{ style: ON.border, width: 0.6 }}
+                mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
                 clipShape="circle"
                 contentShape="circle"
                 onTapGesture={() => {
@@ -390,6 +391,7 @@ export function PlayerPage() {
                 glassEffect={glassCircle()}
                 background={ON.glass}
                 border={{ style: ON.border, width: 0.6 }}
+                mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
                 clipShape="circle"
                 contentShape="circle"
                 onTapGesture={() => Navigation.present({ element: <QueuePage /> })}
@@ -433,6 +435,7 @@ export function PlayerPage() {
                 frame={{ width: 82, height: 82 }}
                 glassEffect={glassCircle()}
                 background={ON.playBg}
+                mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
                 clipShape="circle"
                 shadow={{ color: ON.playShadow, radius: 18, y: 8 }}
                 contentShape="circle"

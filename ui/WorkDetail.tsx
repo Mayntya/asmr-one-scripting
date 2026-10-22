@@ -122,12 +122,16 @@ export function WorkDetail({ work }: { work: Work }) {
           </HStack>
           <ZStack
             frame={{ width: 52, height: 52 }}
-            background={T.rowBgHi}
-            border={{ style: T.border, width: 0.6 }}
-            clipShape="circle"
+            mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
             contentShape="circle"
             onTapGesture={() => setFav(library.toggleFavorite(work))}
           >
+            <Rectangle
+              fill={T.rowBgHi}
+              frame={{ width: 52, height: 52 }}
+              clipShape="circle"
+              border={{ style: T.border, width: 0.6 }}
+            />
             <Image
               systemName={fav ? "heart.fill" : "heart"}
               font="body"
@@ -136,12 +140,16 @@ export function WorkDetail({ work }: { work: Work }) {
           </ZStack>
           <ZStack
             frame={{ width: 52, height: 52 }}
-            background={T.rowBgHi}
-            border={{ style: T.border, width: 0.6 }}
-            clipShape="circle"
+            mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
             contentShape="circle"
             onTapGesture={() => Navigation.present({ element: <ShareCardSheet work={work} /> })}
           >
+            <Rectangle
+              fill={T.rowBgHi}
+              frame={{ width: 52, height: 52 }}
+              clipShape="circle"
+              border={{ style: T.border, width: 0.6 }}
+            />
             <Image systemName="square.and.arrow.up" font="body" foregroundStyle={T.text} />
           </ZStack>
         </HStack>
