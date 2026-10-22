@@ -373,11 +373,10 @@ export function PlayerPage() {
                 foregroundStyle={state.subtitleOn && hasSubtitle ? ON.accent : ON.text}
                 opacity={hasSubtitle ? 1 : 0.4}
                 frame={{ width: 46, height: 46 }}
-                glassEffect={glassCircle()}
+                glassEffect={glass(23)}
                 background={ON.glass}
-                border={{ style: ON.border, width: 0.6 }}
-                mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
-                clipShape="circle"
+                mask={<Rectangle fill="#FFFFFF" clipShape={shape(23)} />}
+                clipShape={shape(23)}
                 contentShape="circle"
                 onTapGesture={() => {
                   if (hasSubtitle) player.toggleSubtitle()
@@ -388,11 +387,10 @@ export function PlayerPage() {
                 font="body"
                 foregroundStyle={ON.text}
                 frame={{ width: 46, height: 46 }}
-                glassEffect={glassCircle()}
+                glassEffect={glass(23)}
                 background={ON.glass}
-                border={{ style: ON.border, width: 0.6 }}
-                mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
-                clipShape="circle"
+                mask={<Rectangle fill="#FFFFFF" clipShape={shape(23)} />}
+                clipShape={shape(23)}
                 contentShape="circle"
                 onTapGesture={() => Navigation.present({ element: <QueuePage /> })}
               />
@@ -433,10 +431,10 @@ export function PlayerPage() {
                 font="largeTitle"
                 foregroundStyle={ON.playFg}
                 frame={{ width: 82, height: 82 }}
-                glassEffect={glassCircle()}
+                glassEffect={glass(41)}
                 background={ON.playBg}
-                mask={<Rectangle fill="#FFFFFF" clipShape="circle" />}
-                clipShape="circle"
+                mask={<Rectangle fill="#FFFFFF" clipShape={shape(41)} />}
+                clipShape={shape(41)}
                 shadow={{ color: ON.playShadow, radius: 18, y: 8 }}
                 contentShape="circle"
                 onTapGesture={() => player.toggle()}
