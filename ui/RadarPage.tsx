@@ -1,13 +1,38 @@
 import { HStack, Image, LazyVGrid, NavigationLink, Rectangle, ScrollView, Spacer, Text, VStack } from "scripting"
 import { circleTone, tagTone, toneColors } from "../lib/palette"
-import { fmtHM, topCircles, topTags } from "../lib/stats"
+import { NIGHT_HOURS, fmtHM, hourLabel, topCircles, topTags, totals } from "../lib/stats"
 import { shape, usePalette } from "../lib/theme"
-import { EmptyState, GroupLabel, ListCard, PageHeader } from "./parts"
+import { EmptyState, GroupLabel, ListCard, PageHeader, Stat } from "./parts"
 import { TagPage } from "./TagPage"
+
+const BAR_H = 74
+
+/** 24 小时分布。深夜那六根用强调色，其余用暗轨色；空小时也给 2pt，免得断成虚线。 */
+function HourBars({ hours }: { hours: number[] }) {
+  const T = usePalette()
+  const max = Math.max(1, ...hours)
+  return (
+    <HStack alignment="bottom" spacing={2} frame={{ maxWidth: Infinity, height: BAR_H }}>
+      {hours.map((s, h) => {
+        const night = NIGHT_HOURS.includes(h)
+        const hh = Math.max(s > 0 ? 4 : 2, Math.round((s / max) * BAR_H))
+        return (
+          <Rectangle
+            key={h}
+            fill={night ? T.accent : T.rowBgHi}
+            frame={{ maxWidth: Infinity, height: hh }}
+            clipShape={shape(3)}
+          />
+        )
+      })}
+    </HStack>
+  )
+}
 
 export function RadarPage() {
   const T = usePalette()
   const dark = T.scheme === "dark"
+  const t = totals()
   const circles = topCircles(10)
   const tags = topTags(20)
 
@@ -20,6 +45,55 @@ export function RadarPage() {
           <EmptyState icon="slider.horizontal.3" text="听几部作品，这里会按社团和标签归好类。" />
         ) : (
           <>
+            <ListCard>
+              <VStack spacing={14} padding={16} frame={{ maxWidth: Infinity }}>
+                <HStack spacing={12} frame={{ maxWidth: Infinity }} alignment="center">
+                  <Stat value={fmtHM(t.seconds)} label="累计收听" />
+                  <VStack alignment="trailing" spacing={1} frame={{ maxWidth: Infinity }}>
+                    <Text font="title" fontWeight="bold" foregroundStyle={T.accentText}>
+                      {`${Math.round(t.nightRatio * 100)}%`}
+                    </Text>
+                    <Text font="caption2" foregroundStyle={T.faint}>
+                      深夜 22–04
+                    </Text>
+                  </VStack>
+                </HStack>
+
+                <HourBars hours={t.hours} />
+
+                <HStack spacing={0} frame={{ maxWidth: Infinity }}>
+                  <Text font="caption2" foregroundStyle={T.faint}>
+                    {"00"}
+                  </Text>
+                  <Spacer />
+                  <Text font="caption2" foregroundStyle={T.faint}>
+                    {"06"}
+                  </Text>
+                  <Spacer />
+                  <Text font="caption2" foregroundStyle={T.faint}>
+                    {"12"}
+                  </Text>
+                  <Spacer />
+                  <Text font="caption2" foregroundStyle={T.faint}>
+                    {"18"}
+                  </Text>
+                  <Spacer />
+                  <Text font="caption2" foregroundStyle={T.faint}>
+                    {"23"}
+                  </Text>
+                </HStack>
+
+                <Text
+                  font="caption2"
+                  foregroundStyle={T.faint}
+                  multilineTextAlignment="leading"
+                  frame={{ maxWidth: Infinity, alignment: "leading" }}
+                >
+                  {`最常在 ${hourLabel(t.peakHour)}:00 前后打开`}
+                </Text>
+              </VStack>
+            </ListCard>
+
             {circles.length > 0 ? (
               <>
                 <GroupLabel text="常听的社团" />
