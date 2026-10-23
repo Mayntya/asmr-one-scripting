@@ -1,5 +1,7 @@
 import {
   HStack,
+  Navigation,
+  NavigationStack,
   Rectangle,
   ScrollView,
   Slider,
@@ -30,7 +32,7 @@ const MODES: { key: ThemeMode; name: string; icon: string; detail: string }[] = 
   { key: "dark", name: "深色", icon: "moon", detail: "一直用深色" },
 ]
 
-export function AppearancePage() {
+export function AppearancePage({ padTop = 8 }: { padTop?: number } = {}) {
   const T = usePalette()
   const [, bump] = useState(0)
   const active = accentKey()
@@ -73,7 +75,7 @@ export function AppearancePage() {
         navigationBarVisibility="hidden"
         background={<Rectangle fill={T.bg} ignoresSafeArea />}
       >
-        <VStack spacing={10} padding={{ horizontal: 16, top: 8, bottom: 60 }} frame={{ maxWidth: Infinity }}>
+        <VStack spacing={10} padding={{ horizontal: 16, top: padTop, bottom: 60 }} frame={{ maxWidth: Infinity }}>
           <PageHeader title="外观" back />
 
           <GroupLabel text="外观模式" />
@@ -192,5 +194,16 @@ export function AppearancePage() {
         </VStack>
       </ScrollView>
     </ZStack>
+  )
+}
+
+/** 外观设置必须放在独立 sheet 里。改色会让所有页面重绘，push 页的导航栈
+ * 会被顶回根页——用户看到的就是「一换色就跳回首页」。sheet 是独立宿主，
+ * 重绘只会画在它自己身上。 */
+export function AppearanceSheet() {
+  return (
+    <NavigationStack>
+      <AppearancePage padTop={12} />
+    </NavigationStack>
   )
 }
