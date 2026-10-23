@@ -204,6 +204,13 @@ export interface SearchResult {
 
 export type SortKey = "release" | "dl_count" | "rating"
 
+/** 服务端排序字段。`rating` 前端叫这个名字，线上只认 `rate_average_2dp`（传 rating 返回 0 条）。 */
+const ORDER_WIRE: Record<SortKey, string> = {
+  release: "release",
+  dl_count: "dl_count",
+  rating: "rate_average_2dp",
+}
+
 /** 每次拿到作品列表时通知外部（本地标签/CV 索引靠这个积累）。 */
 let worksSink: ((list: Work[]) => void) | null = null
 
@@ -225,7 +232,7 @@ export async function searchWorks(
   pageSize = 20
 ): Promise<SearchResult> {
   const kw = keyword.trim()
-  const tail = `order=${order}&sort=desc&page=${page}&pageSize=${pageSize}`
+  const tail = `order=${ORDER_WIRE[order] ?? order}&sort=desc&page=${page}&pageSize=${pageSize}`
   const path =
     kw.length === 0
       ? `/api/works?${tail}`

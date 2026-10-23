@@ -37,6 +37,24 @@ import { SectionLabel } from "./parts"
 import { WikiShelf } from "./WikiPages"
 
 const PAGE_SIZE = 20
+/** 评分要扣样本：1 条 5 分不算神作，100 条 4.8 才算。 */
+const rateScore = (w: Work) => w.rate - 4 / (w.rateCount + 4)
+
+/** 「新作精选」：最新那批里评分最高的（站方不一定真有本周的货，不按绝对日期卡）。 */
+function newBest(recent: Work[], fallback: Work[]): Work[] {
+  const cand = recent
+    .slice()
+    .sort((a, b) => rateScore(b) - rateScore(a))
+    .slice(0, 10)
+  return cand.length >= 5 ? cand : fallback.slice(0, 10)
+}
+
+/** 全站评分榜：同样扣样本，筛掉只有一两条评价的。 */
+function topRated(list: Work[]): Work[] {
+  const solid = list.filter((w) => w.rateCount >= 10)
+  const pool = solid.length >= 8 ? solid : list
+  return pool.slice().sort((a, b) => rateScore(b) - rateScore(a)).slice(0, 12)
+}
 
 const ORDERS: { key: SortKey; label: string }[] = [
   { key: "release", label: "最新" },
@@ -89,12 +107,12 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
     try {
       const [dl, rel, rt] = await Promise.all([
         searchWorks("", 1, "dl_count", 100),
-        searchWorks("", 1, "release", 12),
-        searchWorks("", 1, "rating", 12),
+        searchWorks("", 1, "release", 40),
+        searchWorks("", 1, "rating", 30),
       ])
       setPool(dl.works)
       setFresh(rel.works)
-      setBest(rt.works)
+      setBest(topRated(rt.works))
       const picked = await themeP
       if (picked.length > 0) setThemes(picked)
     } catch {}
@@ -128,9 +146,11 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
   const circles = rankNames(pool, "circle", 10)
   const tags = seededSample(rankNames(pool, "tags", 40), 16, seed)
   const shelves = [
-    { title: "最新上架", works: fresh },
+    { title: "最新上架", works: fresh.slice(0, 12) },
     { title: "评分最高", works: best },
   ].filter((s) => s.works.length > 0)
+
+  const weekly = newBest(fresh, best)
 
   const row = (title: string, right: string | undefined, h: number, children: any) => (
     <VStack spacing={10} frame={{ maxWidth: Infinity }}>
@@ -208,7 +228,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
 
             <WikiShelf />
 
-            {best.length > 0 ? row("本周最佳", "按评分", LANE_H, best.map((w) => <LaneCard key={w.id} work={w} />)) : null}
+            {weekly.length > 0 ? row("新作精选", "新作里评分最高", LANE_H, weekly.map((w) => <LaneCard key={w.id} work={w} />)) : null}
 
             {cvs.length > 0
               ? row("热门 CV", "点进去看全部", CV_H, cvs.map((c) => <CvBubble key={c.name} name={c.name} count={c.count} />))
