@@ -2,7 +2,7 @@
   "name": "ASMR One",
   "icon": "headphones",
   "color": "rgba(255, 92, 141, 1)",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "runInApp": true,
   "localizedNames": {
     "zh": "ASMR One"
