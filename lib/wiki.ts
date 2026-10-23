@@ -24,6 +24,7 @@ const memCache = new Map<string, any>()
 
 const DAY = 86400_000
 const WORK_TTL = 30 * DAY
+const MISS_TTL = 3 * DAY
 const COLL_TTL = 1 * DAY
 const INDEX_TTL = 6 * 3600_000
 
@@ -126,8 +127,10 @@ async function getHtml(path: string): Promise<string | null> {
 }
 
 /** 本地作品 id（432317）↔ DLsite RJ 号（RJ432317）。 */
-export function workRj(id: number): string {
-  return "RJ" + String(id)
+export function workRj(id: number | string): string {
+  const d = String(id).replace(/\D/g, "")
+  // DLsite：老作品 6 位（RJ432317），新作品 8 位（RJ011712782）
+  return "RJ" + (d.length >= 7 ? d.padStart(8, "0") : d)
 }
 
 export function rjText(rj: string): string {
@@ -147,7 +150,8 @@ export async function fetchWikiWork(rj: string): Promise<WikiWork | null> {
   const cacheName = `work-${key}.json`
   const cached = readCache<WikiWork>(cacheName, WORK_TTL)
   if (cached) return cached.rj.length > 0 ? cached : null
-
+  const miss = readCache<WikiWork>(cacheName, MISS_TTL)
+  if (miss) return null
   const html = await getHtml(`/zh/works/${key}`)
   if (html == null) return null
 
