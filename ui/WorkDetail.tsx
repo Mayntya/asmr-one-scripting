@@ -10,6 +10,7 @@ import {
   Text,
   VStack,
   ZStack,
+  NavigationStack,
   useEffect,
   useState,
 } from "scripting"
@@ -23,11 +24,12 @@ import { glass, glassCircle, rjCode, shape, usePalette } from "../lib/theme"
 import { tagTone } from "../lib/palette"
 import { TagLink } from "./TagChip"
 import { TagPage } from "./TagPage"
+import type { TagKind } from "./TagPage"
 import { PlayerPage } from "./PlayerView"
 import { ShareCardSheet } from "./ShareCardSheet"
 import { DownloadSheet } from "./DownloadSheet"
 import { TrackBadge } from "./TrackBadge"
-import { ConfirmLayer } from "./parts"
+import { ConfirmLayer, ListCard, ListRow } from "./parts"
 import { WikiCard } from "./WikiCard"
 
 type Row =
@@ -97,6 +99,19 @@ export function WorkDetail({ work }: { work: Work }) {
 
   const audio = flattenAudio(tracks)
   const rows = buildRows(tracks, { n: 0 }, [])
+
+  /** 详情页只摆得下前几条，剩下的点 +N 开个单子看全。 */
+  const openAll = (kind: TagKind, values: string[]) =>
+    Navigation.present({
+      element: (
+        <AllListSheet
+          title={kind === "cv" ? "全部 CV" : "全部标签"}
+          kind={kind}
+          values={values}
+        />
+      ),
+      modalPresentationStyle: "pageSheet",
+    })
 
   const play = (track: TrackNode) => {
     const idx = audio.findIndex((a) => a.key === track.key)
@@ -266,7 +281,13 @@ export function WorkDetail({ work }: { work: Work }) {
                 </NavigationLink>
               ))}
               {work.vas.length > 3 ? (
-                <Text font="caption2" foregroundStyle={T.faint}>
+                <Text
+                  font="caption2"
+                  fontWeight="semibold"
+                  foregroundStyle={T.accentText}
+                  contentShape="rect"
+                  onTapGesture={() => openAll("cv", work.vas)}
+                >
                   {`+${work.vas.length - 3}`}
                 </Text>
               ) : null}
@@ -280,12 +301,18 @@ export function WorkDetail({ work }: { work: Work }) {
 
           {work.tags.length > 0 ? (
             <HStack spacing={6}>
-              {work.tags.slice(0, 4).map((t) => (
+              {work.tags.slice(0, 3).map((t) => (
                 <TagLink key={t} text={t} tone={tagTone(t)} kind="tag" />
               ))}
-              {work.tags.length > 4 ? (
-                <Text font="caption2" foregroundStyle={T.faint}>
-                  {`+${work.tags.length - 4}`}
+              {work.tags.length > 3 ? (
+                <Text
+                  font="caption2"
+                  fontWeight="semibold"
+                  foregroundStyle={T.accentText}
+                  contentShape="rect"
+                  onTapGesture={() => openAll("tag", work.tags)}
+                >
+                  {`+${work.tags.length - 3}`}
                 </Text>
               ) : null}
               <Spacer />
@@ -417,5 +444,33 @@ export function WorkDetail({ work }: { work: Work }) {
         />
       ) : null}
     </ZStack>
+  )
+}
+
+/** 详情页「+N」后面的全部 CV / 全部标签。点进去就是现成的 TagPage。 */
+function AllListSheet({ title, kind, values }: { title: string; kind: TagKind; values: string[] }) {
+  const T = usePalette()
+  return (
+    <NavigationStack>
+      <ZStack frame={{ maxWidth: Infinity, maxHeight: Infinity }} background={T.bg}>
+        <Rectangle fill={T.bg} ignoresSafeArea />
+        <ScrollView navigationTitle={title} navigationBarTitleDisplayMode="inline">
+          <VStack spacing={10} padding={{ horizontal: 16, top: 12, bottom: 40 }} frame={{ maxWidth: Infinity }}>
+            <ListCard>
+              {values.map((v, i) => (
+                <NavigationLink key={v} destination={<TagPage kind={kind} value={v} />} buttonStyle="plain">
+                  <ListRow
+                    icon={kind === "cv" ? "person" : "tag"}
+                    title={v}
+                    chevron
+                    last={i === values.length - 1}
+                  />
+                </NavigationLink>
+              ))}
+            </ListCard>
+          </VStack>
+        </ScrollView>
+      </ZStack>
+    </NavigationStack>
   )
 }
