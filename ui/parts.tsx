@@ -156,6 +156,7 @@ export function ListRow({
   detail,
   value,
   chevron,
+  checked,
   last,
   danger,
   onTap,
@@ -167,6 +168,7 @@ export function ListRow({
   detail?: string
   value?: string
   chevron?: boolean
+  checked?: boolean
   last?: boolean
   danger?: boolean
   onTap?: () => void
@@ -217,6 +219,9 @@ export function ListRow({
           <Text font="body" foregroundStyle={T.faint} lineLimit={1}>
             {value}
           </Text>
+        ) : null}
+        {checked === true ? (
+          <Image systemName="checkmark" font="body" fontWeight="semibold" foregroundStyle={T.accentText} />
         ) : null}
         {chevron === true ? (
           <Image systemName="chevron.right" font="caption2" fontWeight="semibold" foregroundStyle={T.faint} />

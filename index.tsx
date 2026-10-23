@@ -2,7 +2,8 @@ import { AppEvents, Label, Navigation, NavigationStack, Script, TabView, useEffe
 import { player } from "./lib/player"
 import { refreshAccount } from "./lib/api"
 import { library } from "./lib/store"
-import { usePalette } from "./lib/theme"
+import { usePalette, themeMode } from "./lib/theme"
+import type { ColorScheme } from "scripting"
 import { DiscoverPage } from "./ui/DiscoverPage"
 import { FavoritesPage, HistoryPage } from "./ui/LibraryPage"
 import { MiniPlayer } from "./ui/PlayerView"
@@ -17,6 +18,7 @@ function App() {
   const T = usePalette()
   const [tab, setTab] = useState(currentTab)
   const dismiss = Navigation.useDismiss()
+  const forced = themeMode() === "system" ? undefined : (themeMode() as ColorScheme)
 
   useEffect(() => {
     let alive = true
@@ -53,6 +55,7 @@ function App() {
   return (
     <TabView
       tabIndex={tab}
+      preferredColorScheme={forced}
       onTabIndexChanged={(i: number) => {
         currentTab = i
         setTab(i)

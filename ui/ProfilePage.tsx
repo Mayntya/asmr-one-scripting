@@ -19,7 +19,8 @@ import { GroupLabel, ListCard, ListRow, PageHeader } from "./parts"
 import { StatsPage } from "./StatsPage"
 import { StoragePage } from "./StoragePage"
 import { LoginPage } from "./LoginPage"
-
+import { AppearancePage } from "./AppearancePage"
+import { currentAccent, themeMode } from "../lib/theme"
 function useVersion() {
   const [v, setV] = useState(0)
   useEffect(() => {
@@ -85,6 +86,23 @@ export function ProfilePage({ onClose }: { onClose: () => void }) {
                   icon="waveform"
                   title="收听"
                   detail="时长、时段、最常听的社团与标签"
+                  chevron
+                  last
+                />
+              }
+            />
+          </ListCard>
+
+          <GroupLabel text="外观" />
+          <ListCard>
+            <Link
+              to={<AppearancePage />}
+              row={
+                <ListRow
+                  icon="paintbrush.pointed"
+                  title="外观"
+                  detail="明暗模式与主题色调"
+                  value={themeMode() === "system" ? "跟随系统" : themeMode() === "light" ? "浅色" : "深色"}
                   chevron
                   last
                 />
