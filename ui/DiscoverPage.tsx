@@ -40,7 +40,7 @@ const PAGE_SIZE = 20
 /** 评分要扣样本：1 条 5 分不算神作，100 条 4.8 才算。 */
 const rateScore = (w: Work) => w.rate - 4 / (w.rateCount + 4)
 
-/** 「新作精选」：最新那批里评分最高的（站方不一定真有本周的货，不按绝对日期卡）。 */
+/** 「新作速递」：最新那批里评分最高的（站方不一定真有本周的货，不按绝对日期卡）。 */
 function newBest(recent: Work[], fallback: Work[]): Work[] {
   const cand = recent
     .slice()
@@ -228,7 +228,7 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
 
             <WikiShelf />
 
-            {weekly.length > 0 ? row("新作精选", "新作里评分最高", LANE_H, weekly.map((w) => <LaneCard key={w.id} work={w} />)) : null}
+            {weekly.length > 0 ? row("新作速递", "新上架里评分最高", LANE_H, weekly.map((w) => <LaneCard key={w.id} work={w} />)) : null}
 
             {cvs.length > 0
               ? row("热门 CV", "点进去看全部", CV_H, cvs.map((c) => <CvBubble key={c.name} name={c.name} count={c.count} />))

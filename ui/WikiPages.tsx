@@ -94,11 +94,11 @@ export function WikiCollectionPage({ slug }: { slug: string }) {
   }, [slug])
 
   return (
-    <ScrollView navigationTitle={detail?.title ?? "编辑精选"} navigationBarTitleDisplayMode="inline">
+    <ScrollView navigationTitle={detail?.title ?? "专题"} navigationBarTitleDisplayMode="inline">
       <VStack spacing={14} padding={{ horizontal: 16, top: 12, bottom: 40 }} frame={{ maxWidth: Infinity }}>
         {detail == null ? (
           <Text font="subheadline" foregroundStyle={T.sub}>
-            {failed ? "这篇没抓到，换个合集看。" : "正在读……"}
+            {failed ? "这篇没抓到，换个专题看。" : "正在读……"}
           </Text>
         ) : null}
 
@@ -186,7 +186,7 @@ export function WikiCollectionsPage() {
   }, [])
 
   return (
-    <ScrollView navigationTitle="编辑精选" navigationBarTitleDisplayMode="inline">
+    <ScrollView navigationTitle="专题" navigationBarTitleDisplayMode="inline">
       <VStack spacing={12} padding={{ horizontal: 16, top: 12, bottom: 40 }} frame={{ maxWidth: Infinity }}>
         {loading ? (
           <Text font="subheadline" foregroundStyle={T.sub}>
@@ -234,7 +234,7 @@ export function WikiShelf() {
     <VStack spacing={12} frame={{ maxWidth: Infinity }}>
       <HStack spacing={6} frame={{ maxWidth: Infinity }}>
         <Text font="title3" fontWeight="bold" foregroundStyle={T.text}>
-          编辑精选
+          专题
         </Text>
         <Spacer />
         <NavigationLink destination={<WikiCollectionsPage />} buttonStyle="plain">

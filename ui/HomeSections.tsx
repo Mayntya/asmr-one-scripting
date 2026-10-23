@@ -229,7 +229,7 @@ export function ThemeBanner({ theme, works, width }: { theme: ThemeDef; works: W
                   {`主题 · ${theme.sub}`}
                 </Text>
                 <Text font="title2" fontWeight="bold" foregroundStyle="#FFFFFF">
-                  {`${theme.title}精选`}
+                  {`${theme.title}合集`}
                 </Text>
               </VStack>
             </ZStack>
