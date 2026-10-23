@@ -4,6 +4,20 @@ import { fetchWikiWork, workRj } from "../lib/wiki"
 import type { WikiWork } from "../lib/wiki"
 import { glass, shape, usePalette } from "../lib/theme"
 
+/** 按字数截断，但尽量切在标点上，别把句子断在括号里。 */
+function clip(s: string, n: number): string {
+  if (s.length <= n) return s
+  const head = s.slice(0, n)
+  const cut = Math.max(
+    head.lastIndexOf("。"),
+    head.lastIndexOf("！"),
+    head.lastIndexOf("？"),
+    head.lastIndexOf("，")
+  )
+  const base = cut > n * 0.55 ? head.slice(0, cut) : head
+  return base.replace(/[\s、，。（(「]+$/, "") + "…"
+}
+
 /** 详情页的中文补充信息，数据来自 J-ASMR Wiki（命中才显示）。 */
 export function WikiCard({ work }: { work: Work }) {
   const T = usePalette()
@@ -33,6 +47,9 @@ export function WikiCard({ work }: { work: Work }) {
   const hasBody = data.desc.length > 0 || data.highlights.length > 0
   if (!hasBody) return null
 
+  // lineLimit 只裁显示不改高度，收起的正文会和下面的要点叠在一起，所以自己截字。
+  const desc = open ? data.desc : clip(data.desc, 110)
+
   return (
     <VStack
       alignment="leading"
@@ -54,7 +71,7 @@ export function WikiCard({ work }: { work: Work }) {
       </HStack>
 
       {sameTitle ? null : (
-        <Text font="headline" fontWeight="semibold" foregroundStyle={T.text} lineLimit={3}>
+        <Text font="headline" fontWeight="semibold" foregroundStyle={T.text} lineLimit={3} multilineTextAlignment="leading">
           {data.title}
         </Text>
       )}
@@ -63,10 +80,11 @@ export function WikiCard({ work }: { work: Work }) {
         <Text
           font="subheadline"
           foregroundStyle={T.sub}
-          lineLimit={open ? undefined : 4}
+          multilineTextAlignment="leading"
+          frame={{ maxWidth: Infinity, alignment: "leading" }}
           onTapGesture={() => setOpen(!open)}
         >
-          {data.desc}
+          {desc}
         </Text>
       ) : null}
 
@@ -75,7 +93,12 @@ export function WikiCard({ work }: { work: Work }) {
           {data.highlights.map((h) => (
             <HStack key={h} spacing={6} alignment="top" frame={{ maxWidth: Infinity }}>
               <Image systemName="checkmark" font="caption2" foregroundStyle={T.accent} />
-              <Text font="caption" foregroundStyle={T.sub} frame={{ maxWidth: Infinity }}>
+              <Text
+                font="caption"
+                foregroundStyle={T.sub}
+                multilineTextAlignment="leading"
+                frame={{ maxWidth: Infinity, alignment: "leading" }}
+              >
                 {h}
               </Text>
             </HStack>
