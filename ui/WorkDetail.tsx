@@ -28,6 +28,7 @@ import { ShareCardSheet } from "./ShareCardSheet"
 import { DownloadSheet } from "./DownloadSheet"
 import { TrackBadge } from "./TrackBadge"
 import { ConfirmLayer } from "./parts"
+import { WikiCard } from "./WikiCard"
 
 type Row =
   | { kind: "folder"; title: string; count: number }
@@ -291,6 +292,8 @@ export function WorkDetail({ work }: { work: Work }) {
             </HStack>
           ) : null}
         </VStack>
+
+        <WikiCard work={work} />
 
         <HStack frame={{ maxWidth: Infinity }} alignment="center" spacing={8}>
           <Text font="title3" fontWeight="bold" foregroundStyle={T.text}>

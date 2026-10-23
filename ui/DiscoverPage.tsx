@@ -34,6 +34,7 @@ import type { ThemeSet } from "./HomeSections"
 import { PosterCard } from "./Poster"
 import { WorkRowBig } from "./WorkRowBig"
 import { SectionLabel } from "./parts"
+import { WikiShelf } from "./WikiPages"
 
 const PAGE_SIZE = 20
 
@@ -204,6 +205,8 @@ export function DiscoverPage({ onClose }: { onClose: () => void }) {
             {hot.length > 0 ? row("热门", "按下载量", LANE_H, hot.map((w) => <LaneCard key={w.id} work={w} />)) : null}
 
             {themes.length > 0 ? <ThemeRail sets={themes} /> : null}
+
+            <WikiShelf />
 
             {best.length > 0 ? row("本周最佳", "按评分", LANE_H, best.map((w) => <LaneCard key={w.id} work={w} />)) : null}
 
